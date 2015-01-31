@@ -1,9 +1,12 @@
 def getRadarLength(TimeToEnd):
-    ## Returns a n-tuble with (n1, n2...)
-    ## where n? is the number of measurements for radar ?
-    ## It is forced to be at least two since there should be max two radars...
-    ## To add a dataframe column do:
-    ## df['RadarLength'] = df['TimeToEnd'].apply(getRadarLength)
+    """
+    Returns a n-tuble with (n1, n2...)
+    where n? is the number of measurements for radar ?
+    It is forced to be at least two since there should be max two radars...
+    To add a dataframe column do:
+    df['RadarLength'] = df['TimeToEnd'].apply(getRadarLength)
+    """
+
     tlist = map(float, TimeToEnd.split())
     nlist = [0,]
     previous_time = 9999999999
@@ -33,7 +36,6 @@ def separate_listInColumn(x):
     # nrad1, nrad2 = x.iloc[0]
     # rad1, rad2 = listrads[:nrad1], listrads[nrad1:nrad1 + nrad2]
     return listrads[:x.iloc[0][0]], listrads[x.iloc[0][0]:x.iloc[0][0] + x.iloc[0][1]]
-
     
     
 if __name__ == "__main__":
