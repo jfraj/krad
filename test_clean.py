@@ -4,17 +4,19 @@ import pandas as pd
 
 
 class TestGetRadarLength(unittest.TestCase):
+    ## Testing different cases of radar combinations
+    
     def test_result_has_two_values(self):
         from clean import getRadarLength
-        self.assertEqual(getRadarLength(""), (0, 0))
+        self.assertEqual(getRadarLength(""), (0,))
 
     def test_one_radar(self):
         from clean import getRadarLength
-        self.assertEqual(getRadarLength("1"), (1, 0))
+        self.assertEqual(getRadarLength("1"), (1,))
 
     def test_one_radar_two_points(self):
         from clean import getRadarLength
-        self.assertEqual(getRadarLength("1 1"), (2, 0))
+        self.assertEqual(getRadarLength("1 1"), (2,))
 
     def test_two_radars(self):
         from clean import getRadarLength
@@ -26,6 +28,7 @@ class TestGetRadarLength(unittest.TestCase):
 
 
 class TestSeparateListInColumn(unittest.TestCase):
+    ## Testing how clean.separate_listInColumn is use to create columns
     def test_full(self):
         from clean import separate_listInColumn
         data = {

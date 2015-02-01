@@ -2,7 +2,6 @@ def getRadarLength(TimeToEnd):
     """
     Returns a n-tuble with (n1, n2...)
     where n? is the number of measurements for radar ?
-    It is forced to be at least two since there should be max two radars...
     To add a dataframe column do:
     df['RadarLength'] = df['TimeToEnd'].apply(getRadarLength)
     """
@@ -18,8 +17,6 @@ def getRadarLength(TimeToEnd):
             #assert(current_radar < 2)##it seems that there are cases with >2 radars
         nlist[current_radar] += 1
         previous_time = it
-    if len(nlist)<2:
-        nlist.append(0)
     return tuple(nlist)
 
 def separate_listInColumn(x):
