@@ -23,7 +23,7 @@ def separate_listInColumn(x):
     ## First column must be the tuble of radar length
     ## Following columns should be columns to separate
     ## For now it gets only the first two radars
-    # First translate the list string into a float string
+    # First translate the list string into a float list
     listrads = map(float,  x.iloc[1].split())
     # The list in then sliced by radar given in the first elements of x
     # x.iloc[0] is a tuple with the length of each radar measurement, i.e.
@@ -32,13 +32,26 @@ def separate_listInColumn(x):
     # rad_measurements = x.iloc[0]
     # nrad1, nrad2 = x.iloc[0]
     # rad1, rad2 = listrads[:nrad1], listrads[nrad1:nrad1 + nrad2]
-    #print 'Here'
-    #print x.iloc[0]
-    #print len(x.iloc[0])
-    if len(x.iloc[0]) < 2:
-        return [listrads,]
-    return listrads[:x.iloc[0][0]], listrads[x.iloc[0][0]:x.iloc[0][0] + x.iloc[0][1]]
-    
+    #if len(x.iloc[0]) < 2:
+    #    return [listrads,]
+    #return listrads[:x.iloc[0][0]], listrads[x.iloc[0][0]:x.iloc[0][0] + x.iloc[0][1]]
+    by_rads = [listrads[:x.iloc[0][0]], ]
+    for idx in range(len(x.iloc[0]))[:-1]:
+        by_rads.append(listrads[sum(x.iloc[0][:idx+1]):sum(x.iloc[0][:idx+2])])
+    return tuple(by_rads)
+
+
+def getIthRadar(x, iradar =1):
+    ## Returns a list of measurements for the ith radar
+    ## Returns None if there are no ith radar
+    if len(x.iloc[0])<iradar:
+        return None## Or should it be NA?
+    ## The longer but clearer way
+    listrads = map(float,  x.iloc[1].split())
+    rad_start_index = sum(x.iloc[0][:iradar-1])
+    rad_stop_index = rad_start_index + x.iloc[0][iradar-1]
+    return tuple(listrads[rad_start_index:rad_stop_index])
+
     
 if __name__ == "__main__":
     #print getRadarLength([5,4,3,2,1])
@@ -46,12 +59,14 @@ if __name__ == "__main__":
 
     ##The following lines show how to create a new column with the length of each radar
     import pandas as pd
-    data = {"a": ["5 4 3 2 1", "5 4 3 7 1", "6 7 7", "3 5 6 1"], "b" :  [(3,2), (2,3), (1,2), (4,)]}
+    data = {"a": ["5 4 3 2 1", "5 4 3 7 1", "6 7 7", "3 5 6 1", "1 2 3 4 5 6 7 8"], "b" :  [(3,2), (2,3), (1,2), (2,2), (2,3,2)]}
     df = pd.DataFrame(data)
     print df
     #df['z'] = df['a'].apply(getRadarLength)
     #print df[[1,0]].apply(separate_listInColumn, axis=1)
     #df['z'] = df[[1,0]].apply(separate_listInColumn, axis=1)
-    df['r1'], df['r2'] = zip(*df[['b','a']].apply(separate_listInColumn, axis=1))
-    print '\n\n\n'
-    print df
+    #print df[['b','a']].apply(separate_listInColumn, axis=1)
+    #df['r1'], df['r2'] = zip(*df[['b','a']].apply(separate_listInColumn, axis=1))
+    #print '\n\n\n'
+    #print df
+    print df[['b','a']].apply(getIthRadar, axis=1)
