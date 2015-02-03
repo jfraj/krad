@@ -32,6 +32,11 @@ def separate_listInColumn(x):
     # rad_measurements = x.iloc[0]
     # nrad1, nrad2 = x.iloc[0]
     # rad1, rad2 = listrads[:nrad1], listrads[nrad1:nrad1 + nrad2]
+    #print 'Here'
+    #print x.iloc[0]
+    #print len(x.iloc[0])
+    if len(x.iloc[0]) < 2:
+        return [listrads,]
     return listrads[:x.iloc[0][0]], listrads[x.iloc[0][0]:x.iloc[0][0] + x.iloc[0][1]]
     
     
@@ -41,7 +46,7 @@ if __name__ == "__main__":
 
     ##The following lines show how to create a new column with the length of each radar
     import pandas as pd
-    data = {"a": ["5 4 3 2 1", "5 4 3 7 1", "6 7 7", "3 5 6 1"], "b" :  [(3,2), (2,3), (1,2), (4,0)]}
+    data = {"a": ["5 4 3 2 1", "5 4 3 7 1", "6 7 7", "3 5 6 1"], "b" :  [(3,2), (2,3), (1,2), (4,)]}
     df = pd.DataFrame(data)
     print df
     #df['z'] = df['a'].apply(getRadarLength)
