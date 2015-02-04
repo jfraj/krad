@@ -20,9 +20,14 @@ def getRadarLength(TimeToEnd):
     return tuple(nlist)
 
 def separate_listInColumn(x):
-    ## First column must be the tuble of radar length
-    ## Following columns should be columns to separate
-    ## For now it gets only the first two radars
+    """
+    Input:
+        x : should be a panda Dataframe
+                - First column must be the tuble of radar length
+                - Following columns should be columns to separate
+
+    For now it gets only the first two radars
+    """
     # First translate the list string into a float string
     listrads = map(float,  x.iloc[1].split())
     # The list in then sliced by radar given in the first elements of x
