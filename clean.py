@@ -1,3 +1,5 @@
+import numpy as N
+
 def getRadarLength(TimeToEnd):
     """
     Returns a n-tuble with (n1, n2...)
@@ -52,6 +54,11 @@ def getIthRadar(x, iradar =1):
     rad_stop_index = rad_start_index + x.iloc[0][iradar-1]
     return tuple(listrads[rad_start_index:rad_stop_index])
 
+def getListReductions(x):
+    ## Returns mean, range (max - min) and # of values of the given column
+    ## 
+    xarray = N.array(map(float, x.split()))
+    return xarray.mean(), xarray.ptp(axis=0), len(xarray)
     
 if __name__ == "__main__":
     #print getRadarLength([5,4,3,2,1])
@@ -69,4 +76,5 @@ if __name__ == "__main__":
     #df['r1'], df['r2'] = zip(*df[['b','a']].apply(separate_listInColumn, axis=1))
     #print '\n\n\n'
     #print df
-    print df[['b','a']].apply(getIthRadar, axis=1)
+    #print df[['b','a']].apply(getIthRadar, axis=1)
+    print zip(*df['a'].apply(getListReductions))

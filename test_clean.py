@@ -53,6 +53,18 @@ class TestSeparateListInColumn(unittest.TestCase):
             [],
             ))
 
+class TestGetListReductions(unittest.TestCase):
+    ## Testing new columns creation with getListReductions
+    
+    def test_3columns_creations(self):
+        from clean import getListReductions
+        data= {'c1': ['1 2 3 4', '5 6 7'],}
+        df = pd.DataFrame(data)
+        r1, r2, r3 = zip(*df['c1'].apply(getListReductions))
+        self.assertEqual(r1, (2.5, 6.0))
+        self.assertEqual(r2, (3.0, 2.0))
+        self.assertEqual(r3, (4.0, 3.0))
+
 
 if __name__ == '__main__':
     unittest.main()
