@@ -47,7 +47,6 @@ def separate_listInColumn(x):
         by_rads.append(listrads[sum(x.iloc[0][:idx+1]):sum(x.iloc[0][:idx+2])])
     return tuple(by_rads)
 
-
 def getIthRadar(x, iradar =1):
     ## Returns a list of measurements for the ith radar
     ## Returns None if there are no ith radar
