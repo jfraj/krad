@@ -21,7 +21,7 @@ logger.setLevel(logging.DEBUG)
 
 
 
-def generate_submission_file(submission_data):
+def generate_submission_file(list_id,submission_data):
     """
     Simple script to generate the submission file.
     """
@@ -37,8 +37,7 @@ def generate_submission_file(submission_data):
     # write the header to file
     writer.writerow(solution_header)
 
-    for i, row in enumerate(submission_data):
-        id_num = i+1
+    for id_num, row in zip(list_id,submission_data):
         # write the solution row
         solution_row = [id_num]
         solution_row.extend(row)
