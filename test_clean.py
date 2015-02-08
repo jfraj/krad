@@ -26,7 +26,6 @@ class TestGetRadarLength(unittest.TestCase):
         from clean import getRadarLength
         self.assertEqual(getRadarLength("1 2 3"), (1, 1, 1))
 
-
 class TestSeparateListInColumn(unittest.TestCase):
     ## Testing how clean.separate_listInColumn is use to create columns
     def test_full(self):
@@ -76,7 +75,6 @@ class TestGetListReductions(unittest.TestCase):
         self.assertEqual(r1, (2.5, 6.0))
         self.assertEqual(r2, (3.0, 2.0))
         self.assertEqual(r3, (4.0, 3.0))
-
 
 class TestGetIthRadar(unittest.TestCase):
     ## Testing new columns creation with getListReductions
