@@ -37,7 +37,9 @@ def generate_submission_file(list_id,submission_data):
     # write the header to file
     writer.writerow(solution_header)
 
+    i = 0
     for id_num, row in zip(list_id,submission_data):
+        i += 1
         # write the solution row
         solution_row = [id_num]
         solution_row.extend(row)
