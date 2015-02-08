@@ -80,5 +80,6 @@ if __name__ == "__main__":
     #df['r1'], df['r2'] = zip(*df[['b','a']].apply(separate_listInColumn, axis=1))
     #print '\n\n\n'
     #print df
-    #print df[['b','a']].apply(getIthRadar, axis=1)
-    print zip(*df['a'].apply(getListReductions))
+    df['a1'] =  df[['b','a']].apply(getIthRadar, axis=1)
+    print list(df['a1'])
+    #print zip(*df['a'].apply(getListReductions))

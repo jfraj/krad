@@ -66,5 +66,19 @@ class TestGetListReductions(unittest.TestCase):
         self.assertEqual(r3, (4.0, 3.0))
 
 
+class TestGetIthRadar(unittest.TestCase):
+    ## Testing new columns creation with getListReductions
+    
+    def test_1stradar_extraction(self):
+        from clean import getIthRadar
+        data = {
+            'a': ['5 4 3 2 1', '5 4 3 7 1', '6 7 7', '3 5 6 1'],
+            'b': [(3, 2), (2, 3), (1, 2), (4, 0)],
+            }
+        df = pd.DataFrame(data)
+        df['radar1'] = df[['b','a']].apply(getIthRadar, axis=1)
+        self.assertEqual(list(df['radar1']), [(5.0, 4.0, 3.0), (5.0, 4.0), (6.0,), (3.0, 5.0, 6.0, 1.0)])
+
+        
 if __name__ == '__main__':
     unittest.main()
