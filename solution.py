@@ -20,7 +20,6 @@ logger.setLevel(logging.DEBUG)
 
 
 
-
 def generate_submission_file(list_id,submission_data):
     """
     Simple script to generate the submission file.
