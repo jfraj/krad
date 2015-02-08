@@ -30,8 +30,14 @@ def separate_listInColumn(x):
                 - Following columns should be columns to separate
 
     """
-    # First translate the list string into a float string
-    listrads = map(float,  x.iloc[1].split())
+    # determine if there is more than one time step
+    if type(x.iloc[1]) == float:
+        # There is a single time step, and the pandas read a float
+        listrads = [x.iloc[1]]
+    elif type(x.iloc[1]) == str:
+        # There are multiple time steps, and the pandas read a string
+        listrads = map(float,  x.iloc[1].split())
+
     # The list in then sliced by radar given in the first elements of x
     # x.iloc[0] is a tuple with the length of each radar measurement, i.e.
     # x.iloc[0][0] is the # of measurement with the 1st radar (x.iloc[0][1] for the 2nd radar)
