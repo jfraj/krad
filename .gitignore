@@ -1,5 +1,7 @@
 *.csv
 *.pyc
+*.txt
+sample_solution.py
 .ipynb_checkpoints
 .DS_Store
 Data/
