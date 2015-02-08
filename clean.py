@@ -23,19 +23,19 @@ def getRadarLength(TimeToEnd):
 
 def separate_listInColumn(x):
     """
+    Returns a tuple where all the measurements are separeted by radar 
     Input:
         x : should be a panda Dataframe
                 - First column must be the tuble of radar length
                 - Following columns should be columns to separate
 
-    For now it gets only the first two radars
     """
     # First translate the list string into a float string
     listrads = map(float,  x.iloc[1].split())
     # The list in then sliced by radar given in the first elements of x
     # x.iloc[0] is a tuple with the length of each radar measurement, i.e.
     # x.iloc[0][0] is the # of measurement with the 1st radar (x.iloc[0][1] for the 2nd radar)
-    # The following line could be rewritten more clearly (by less efficient?) like this:
+    # The following line could be rewritten more clearly (but less efficient?) like this:
     # rad_measurements = x.iloc[0]
     # nrad1, nrad2 = x.iloc[0]
     # rad1, rad2 = listrads[:nrad1], listrads[nrad1:nrad1 + nrad2]
@@ -48,8 +48,16 @@ def separate_listInColumn(x):
     return tuple(by_rads)
 
 def getIthRadar(x, iradar =1):
-    ## Returns a list of measurements for the ith radar
-    ## Returns None if there are no ith radar
+    '''
+    Returns a list of measurements for the ith radar
+    Returns None if there are no ith radar
+    Input:
+        x : should be a panda Dataframe
+                - First column must be the tuble of radar length
+                (as produced by getRadarLength)
+                - Second columns must contains the values to separate
+        iradar : the ith radar to return the data from (default=1st)
+    '''
     if len(x.iloc[0])<iradar:
         return None## Or should it be NA?
     ## The longer but clearer way
@@ -59,10 +67,24 @@ def getIthRadar(x, iradar =1):
     return tuple(listrads[rad_start_index:rad_stop_index])
 
 def getListReductions(x):
-    ## Returns mean, range (max - min) and # of values of the given column
-    ## 
+    '''
+    Returns mean, range (max - min) and # of values of the given list
+    Input:
+        x : should be a list or tuple
+        (or something that can be turned into a numpy array)
+    '''
+    xarray = N.array(x)
+    return xarray.mean(), xarray.ptp(axis=0), len(xarray)
+
+def getStringReductions(x):
+    '''
+    Returns mean, range (max - min) and # of values of the given string
+    Input:
+        x : should be a space-separated value string
+    '''
     xarray = N.array(map(float, x.split()))
     return xarray.mean(), xarray.ptp(axis=0), len(xarray)
+
     
 if __name__ == "__main__":
     #print getRadarLength([5,4,3,2,1])
