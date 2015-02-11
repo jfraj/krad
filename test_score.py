@@ -4,6 +4,10 @@ import numpy as N
 
 
 class TestHeaviside(unittest.TestCase):
+    '''
+    Compares the heaviside function from the score module
+    with a heaviside defined with alternate coding
+    '''
     
     def alternative_heaviside(self,r):
         x = N.arange(70)
@@ -28,6 +32,9 @@ class TestHeaviside(unittest.TestCase):
             self.assert_heaviside(r)
 
 class TestMetric(unittest.TestCase):
+    '''
+    Testing score calculation
+    '''
 
     def test_kaggle_metric_same_inputs(self):
         predictions = N.random.random([100,70])
@@ -35,7 +42,7 @@ class TestMetric(unittest.TestCase):
 
         self.assertAlmostEqual(error , 0.)
 
-    def test_kaggle_metric_same_inputs(self):
+    def test_kaggle_metric_one_value(self):
 
         predictions = [  1. ]
         exact_values= [  0. ]
