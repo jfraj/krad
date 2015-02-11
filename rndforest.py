@@ -7,6 +7,11 @@
 import pandas as pd
 import clean
 import matplotlib.pyplot as plt
+import numpy as N
+
+from sklearn.ensemble import RandomForestClassifier
+
+from score import kaggle_metric
 
 feature_ranges = {'Avg_Reflectivity': [-10, 50]}
 
@@ -68,9 +73,33 @@ class RandomForestModel(object):
         fig.show()
         raw_input('press enter when finished...')
 
+    def fitNscore(self, maxdepth=8, nestimators = 30):
+        '''
+        Fits the data and show the score
+        '''
+        col2fit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval_Reflectivity']
+        print 'Using the following columns:'
+        print col2fit
 
+        ## Get the data ready to fit
+        self.prepare_data(self.df_train)
+        values2fit = self.df_train[col2fit].values
+        forest = RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth)
+        nrows = self.df_train.shape[0]
+        nfit = int(0.7*nrows)
+
+        ## Fit on 70% of the score
+        forest.fit(values2fit[:nfit,1:], values2fit[:nfit,0])
+
+        ## Predict on the rest of the sample
+        output = forest.predict(values2fit[nfit:,1:])
+
+        ## Get and print the score
+        score = kaggle_metric(N.round(output), values2fit[nfit:,0])
+        print '\n\nScore={}'.format(score)
 
                 
 if __name__=='__main__':
     rfmodel = RandomForestModel('Data/train_2013.csv', 20000)
-    rfmodel.show_feature('Avg_Reflectivity')
+    #rfmodel.show_feature('Avg_Reflectivity')
+    rfmodel.fitNscore()
