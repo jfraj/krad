@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import numpy as N
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.learning_curve import validation_curve
+from sklearn.learning_curve import learning_curve
 
 from score import kaggle_metric
 
@@ -73,11 +75,10 @@ class RandomForestModel(object):
         fig.show()
         raw_input('press enter when finished...')
 
-    def fitNscore(self, maxdepth=8, nestimators = 30):
+    def fitNscore(self, col2fit, maxdepth=8, nestimators = 30):
         '''
         Fits the data and show the score
         '''
-        col2fit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval_Reflectivity']
         print 'Using the following columns:'
         print col2fit
 
@@ -98,8 +99,100 @@ class RandomForestModel(object):
         score = kaggle_metric(N.round(output), values2fit[nfit:,0])
         print '\n\nScore={}'.format(score)
 
+    def validation_curves(self, col2fit):
+        '''
+        This is just a test for now
+        Since crossvalidation does not take continuous variable
+        So I multiple by 10 and turn into a int...
+        '''
+        ## Get the data ready to fit
+        self.prepare_data(self.df_train)
+
+        ## Turn expected into int
+        self.df_train['Expected'] = self.df_train['Expected'].apply(lambda n: int(10*n))
+        
+        values2fit = self.df_train[col2fit].values
+        paramater4validation = "n_estimators"
+        param_range = [2,3,4,5,6,7,8,9,11,15,20]
+        train_scores, test_scores = validation_curve(
+            RandomForestClassifier(), values2fit[0:,1:], values2fit[0:,0],
+            param_name=paramater4validation, param_range=param_range,cv=10,
+            scoring="accuracy", n_jobs=1)
+        train_scores_mean = N.mean(train_scores, axis=1)
+        train_scores_std = N.std(train_scores, axis=1)
+        test_scores_mean = N.mean(test_scores, axis=1)
+        test_scores_std = N.std(test_scores, axis=1)
+        fig = plt.figure()
+        plt.title("Validation Curve")
+        plt.xlabel(paramater4validation)
+        plt.ylabel("Score")
+        plt.plot(param_range, train_scores_mean, label="Training score", color="r")
+        plt.fill_between(param_range, train_scores_mean - train_scores_std,
+                 train_scores_mean + train_scores_std, alpha=0.2, color="r")
+        plt.plot(param_range, test_scores_mean, label="Cross-validation score",
+             color="g")
+        plt.fill_between(param_range, test_scores_mean - test_scores_std,
+                 test_scores_mean + test_scores_std, alpha=0.2, color="g")
+        plt.grid()
+        plt.legend(loc='best')
+        fig.show()
+        raw_input('press enter when finished...')
+
+    def learning_curves(self, col2fit, score='accuracy', nestimators=40, maxdepth=8):
+        """
+        WARNING: turns the Expected into integer (after multiplying by 10)
+        Creates a plot score vs # of training examples
+        possible score:
+        ['accuracy', 'adjusted_rand_score', 'average_precision', 'f1', 'log_loss', 'mean_absolute_error', 'mean_squared_error', 'precision', 'r2', 'recall', 'roc_auc']
+        more info here:
+        http://scikit-learn.org/stable/modules/learning_curve.html
+        """
+
+        ## Data clean up for training
+        self.prepare_data(self.df_train)
+        print 'Training on the following features:'
+        print col2fit
+        ## Turn expected into int
+        self.df_train['Expected'] = self.df_train['Expected'].apply(lambda n: int(10*n))
+
+        train_data = self.df_train[col2fit].values
+        X = train_data[0:,1:]
+        y = train_data[0:,0]
+        train_sizes = [x / 10.0 for x in range(1, 11)]##Can be other formats
+
+        print 'learning...'
+        train_sizes, train_scores, test_scores = learning_curve(RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth), X, y, cv=10, n_jobs=1, train_sizes=train_sizes, scoring=score)
+
+        ## Plotting
+        fig = plt.figure()
+        plt.xlabel("Training examples")
+        plt.ylabel(score)
+        plt.title("Learning Curves (RandomForest n_estimators={0}, max_depth={1})".format(nestimators, maxdepth))
+        train_scores_mean = N.mean(train_scores, axis=1)
+        train_scores_std = N.std(train_scores, axis=1)
+        test_scores_mean = N.mean(test_scores, axis=1)
+        test_scores_std = N.std(test_scores, axis=1)
+        plt.grid()        
+        plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
+                         train_scores_mean + train_scores_std, alpha=0.1,
+                         color="r")
+        plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
+                         test_scores_mean + test_scores_std, alpha=0.1, color="g")
+        plt.plot(train_sizes, train_scores_mean, 'o-', color="r",
+             label="Training score")
+        plt.plot(train_sizes, test_scores_mean, 'o-', color="g",
+             label="Cross-validation score")
+        plt.legend(loc="best")
+        print 'Done'
+        fig.show()
+        raw_input('press enter when finished...')
+
+
                 
 if __name__=='__main__':
     rfmodel = RandomForestModel('Data/train_2013.csv', 20000)
     #rfmodel.show_feature('Avg_Reflectivity')
-    rfmodel.fitNscore()
+    coltofit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval_Reflectivity']
+    #rfmodel.fitNscore(coltofit)
+    #rfmodel.validation_curves(coltofit)
+    rfmodel.learning_curves(coltofit)
