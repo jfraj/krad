@@ -109,7 +109,7 @@ class RandomForestModel(object):
         self.prepare_data(self.df_train)
 
         ## Turn expected into int
-        self.df_train['Expected'] = self.df_train['Expected'].apply(lambda n: int(10*n))
+        self.df_train['Expected'] = self.df_train['Expected'].apply(lambda n: int(round(n)))
         
         values2fit = self.df_train[col2fit].values
         paramater4validation = "n_estimators"
@@ -140,7 +140,7 @@ class RandomForestModel(object):
 
     def learning_curves(self, col2fit, score='accuracy', nestimators=40, maxdepth=8):
         """
-        WARNING: turns the Expected into integer (after multiplying by 10)
+        WARNING: turns the Expected into integer
         Creates a plot score vs # of training examples
         possible score:
         ['accuracy', 'adjusted_rand_score', 'average_precision', 'f1', 'log_loss', 'mean_absolute_error', 'mean_squared_error', 'precision', 'r2', 'recall', 'roc_auc']
@@ -153,7 +153,7 @@ class RandomForestModel(object):
         print 'Training on the following features:'
         print col2fit
         ## Turn expected into int
-        self.df_train['Expected'] = self.df_train['Expected'].apply(lambda n: int(10*n))
+        self.df_train['Expected'] = self.df_train['Expected'].apply(lambda n: int(round(n)))
 
         train_data = self.df_train[col2fit].values
         X = train_data[0:,1:]
