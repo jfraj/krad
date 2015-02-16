@@ -8,7 +8,7 @@ The raw data comes from a csv file which comes from a variable number of radar
 
 * TimeToEnd:  How many minutes before the end of the hour was this radar observation?
 
-* DistanceToRadar:  Distance between radar and gauge.  This value is scaled and rounded to prevent reverse engineering gauge location
+* DistanceToRadar:  Distance between radar and gauge.  This value is scaled and rounded to prevent reverse engineering gauge location (see notebook distancetoradar.ipynb for more information)
 
 * Composite:  Maximum reflectivity in vertical volume above gauge
 
