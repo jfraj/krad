@@ -38,10 +38,34 @@ class RandomForestModel(object):
         prepare self.df_train for fitting
         """
         df['RadarCounts'] = df['TimeToEnd'].apply(clean.getRadarLength)
+
+        ## Adding the mean of variables to fit
+
+        ## Reflectivity
         df['Reflectivity1'] = df[['RadarCounts','Reflectivity']].apply(
             clean.getIthRadar, axis=1)
-        df['Avg_Reflectivity'],  df['Range_Reflectivity'], df['Nval_Reflectivity']=\
+        df['Avg_Reflectivity'],  df['Range_Reflectivity'], df['Nval']=\
           zip(*df['Reflectivity1'].apply(clean.getListReductions))
+
+        ## Distance to radar
+        df['DistanceToRadar1'] = df[['RadarCounts','DistanceToRadar']].apply(clean.getIthRadar,
+                                                                             axis=1)
+        df['Avg_DistanceToRadar'],  df['Range_DistanceToRadar'], df['Nval_DistanceToRadar']=\
+          zip(*df['DistanceToRadar1'].apply(clean.getListReductions))
+        ## Remove the Nval_xxx it's already in the Nval column 
+        df.drop('Nval_DistanceToRadar', axis=1, inplace=True)
+
+        ## Radar quality index
+        df['RadarQualityIndex1'] = df[['RadarCounts','RadarQualityIndex']].apply(clean.getIthRadar,
+                                                                                 axis=1)
+        df['Avg_RadarQualityIndex'],  df['Range_RadarQualityIndex'], df['Nval_RadarQualityIndex']=\
+          zip(*df['RadarQualityIndex1'].apply(clean.getListReductions))
+        df.drop('Nval_RadarQualityIndex', axis=1, inplace=True)
+        ## Set the above 1 (could not be computed) to 0.5 i.e. average data
+        ## (any element in the list above 999 will make the average above 1)
+        df.loc[df.Avg_RadarQualityIndex > 1, 'Avg_RadarQualityIndex'] = 0.5
+        ## Set All the < 0 (something wrong with measurement) as 0 i.e. bad data
+        df.loc[df.Avg_RadarQualityIndex < 0, 'Avg_RadarQualityIndex'] = 0.0
 
 
     def show_feature(self, feature):
@@ -79,8 +103,9 @@ class RandomForestModel(object):
         '''
         Fits the data and show the score
         '''
+        assert(col2fit[0] == 'Expected')
         print 'Using the following columns:'
-        print col2fit
+        print col2fit[1:]
 
         ## Get the data ready to fit
         self.prepare_data(self.df_train)
@@ -94,6 +119,11 @@ class RandomForestModel(object):
 
         ## Predict on the rest of the sample
         output = forest.predict(values2fit[nfit:,1:])
+
+        print '\nFeatures importances'
+        ord_idx = N.argsort(forest.feature_importances_)#Feature index ordered by importance 
+        for ifeaturindex in ord_idx[::-1]:
+            print '{0} \t: {1} '.format(col2fit[1:][ifeaturindex], round(forest.feature_importances_[ifeaturindex], 2))
 
         ## Get and print the score
         score = kaggle_metric(N.round(output), values2fit[nfit:,0])
@@ -191,8 +221,10 @@ class RandomForestModel(object):
                 
 if __name__=='__main__':
     rfmodel = RandomForestModel('Data/train_2013.csv', 20000)
-    #rfmodel.show_feature('Avg_Reflectivity')
-    coltofit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval_Reflectivity']
+    #rfmodel.show_feature('Avg_RadarQualityIndex')
+    coltofit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
+                'Avg_DistanceToRadar', 'Range_DistanceToRadar',
+                'Avg_RadarQualityIndex', 'Range_RadarQualityIndex']
     #rfmodel.fitNscore(coltofit)
     #rfmodel.validation_curves(coltofit)
     rfmodel.learning_curves(coltofit)
