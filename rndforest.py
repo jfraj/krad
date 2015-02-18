@@ -4,16 +4,19 @@
 #
 #================================================================================
 
+## General imports
 import pandas as pd
-import clean
 import matplotlib.pyplot as plt
 import numpy as N
 
+## Sklearn
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.learning_curve import validation_curve
 from sklearn.learning_curve import learning_curve
 
-from score import kaggle_metric
+## krad import
+import clean, solution
+from score import kaggle_metric, heaviside
 
 feature_ranges = {'Avg_Reflectivity': [-10, 50]}
 
@@ -217,14 +220,46 @@ class RandomForestModel(object):
         fig.show()
         raw_input('press enter when finished...')
 
+    def submit(self, col2fit, maxdepth=8, nestimators = 30):
+        '''
+        Create the file to submit
+        '''
+        assert(col2fit[0] == 'Expected')
+        ## Prepare train and test data
+        print 'Cleaning train data...'
+        self.prepare_data(self.df_train)
+        print 'Getting and cleaning test data...'
+        #df_test = pd.read_csv('Data/test_2014.csv', nrows=1000)
+        df_test = pd.read_csv('Data/test_2014.csv')
+        self.prepare_data(df_test)
+
+        print 'Training with maxdepth={} and n_estimators={}...'.format(maxdepth, nestimators)
+        values2fit = self.df_train[col2fit].values
+        forest = RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth)
+        forest.fit(values2fit[:,1:], values2fit[:,0])
+
+        print 'Predicting...'
+        values4predict = df_test[col2fit[1:]].values
+        prediction_output = forest.predict(values4predict)
+
+        print 'Create submission data...'
+        submission_data = N.array(map(heaviside, N.round(prediction_output)))
+        list_id = df_test['Id'].values
+        solution.generate_submission_file(list_id,submission_data)
+        print '\n\n\n Done!'
+
 
                 
 if __name__=='__main__':
-    rfmodel = RandomForestModel('Data/train_2013.csv', 20000)
+    #rfmodel = RandomForestModel('Data/train_2013.csv', 2000)
+    rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #rfmodel.show_feature('Avg_RadarQualityIndex')
     coltofit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Range_DistanceToRadar',
                 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex']
     #rfmodel.fitNscore(coltofit)
     #rfmodel.validation_curves(coltofit)
-    rfmodel.learning_curves(coltofit)
+    #rfmodel.learning_curves(coltofit)
+
+    ##Submission
+    rfmodel.submit(coltofit)
