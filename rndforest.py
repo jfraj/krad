@@ -16,9 +16,13 @@ from sklearn.learning_curve import learning_curve
 
 ## krad import
 import clean, solution
-from score import kaggle_metric, heaviside
+from score import kaggle_metric, heaviside, poisson_cumul
 
-feature_ranges = {'Avg_Reflectivity': [-10, 50]}
+feature_dic = {\
+               'Avg_Reflectivity': {'range':[-10, 50], 'log': False},
+               'Expected': {'range': [-10, 70], 'log': True},
+               'Avg_RR1': {'range': [-10, 70], 'log': True},
+               }
 
 
 class RandomForestModel(object):
@@ -92,22 +96,25 @@ class RandomForestModel(object):
         no_rain = self.df_train['Expected'].apply(lambda n: n == 0 )
         rain_feature = self.df_train[rain][feature].get_values()
         norain_feature = self.df_train[no_rain][feature].get_values()
+        ranges = [[min(rain_feature), max(rain_feature)],[0, 20]]
+        log = False
+        if feature_dic.has_key(feature):
+                ranges[0] = feature_dic[feature]['range']
+                log = feature_dic[feature]['log']
 
         ## Plot
         fig = plt.figure()
         ax = plt.subplot(1,2,1)
-        plt.hist([rain_feature,norain_feature],
+        #plt.hist([rain_feature,norain_feature],
+        plt.hist([norain_feature,rain_feature],
                bins=100,normed=True,stacked=False,histtype='stepfilled',
-                label=['Rain','No Rain'],alpha=0.75)
-        if feature in ('Avg_RR1',):
+                label=['No Rain','Rain'],alpha=0.75, range=ranges[0])
+        if log:
             ax.set_yscale('log')
         plt.legend(loc='best')
         plt.title(feature)
         plt.subplot(1,2,2)
         #plt.scatter(self.df_train[rain][feature].get_values(), self.df_train[rain]['Expected'].get_values(), color='Red', label='Rain')
-        ranges = [[min(rain_feature), max(rain_feature)],[0, 20]]
-        if feature_ranges.has_key(feature):
-                ranges[0] = feature_ranges[feature]
         plt.hist2d(self.df_train[rain][feature].get_values(), self.df_train[rain]['Expected'].get_values(), range=ranges, bins=100, norm=LogNorm())
         plt.xlabel(feature)
         plt.ylabel('Rain gauge')
@@ -141,8 +148,11 @@ class RandomForestModel(object):
             print '{0} \t: {1} '.format(col2fit[1:][ifeaturindex], round(forest.feature_importances_[ifeaturindex], 2))
 
         ## Get and print the score
+        print 'Scoring...'
         score = kaggle_metric(N.round(output), values2fit[nfit:,0])
-        print '\n\nScore={}'.format(score)
+        score_pois = kaggle_metric(N.round(output), values2fit[nfit:,0], 'poisson')
+        print '\n\nScore(heaviside)={}'.format(score)
+        print '\nScore(poisson)={}\n\n'.format(score_pois)
 
     def validation_curves(self, col2fit):
         '''
@@ -243,13 +253,13 @@ class RandomForestModel(object):
         print 'Cleaning train data...'
         self.prepare_data(self.df_train)
         print 'Getting and cleaning test data...'
-        #df_test = pd.read_csv('Data/test_2014.csv', nrows=5000)##For testing
+        #df_test = pd.read_csv('Data/test_2014.csv', nrows=2000)##For testing
         df_test = pd.read_csv('Data/test_2014.csv')
         self.prepare_data(df_test)
 
         print 'Training with maxdepth={} and n_estimators={}...'.format(maxdepth, nestimators)
         values2fit = self.df_train[col2fit].values
-        forest = RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth)
+        forest = RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth, n_jobs=-1)
         forest.fit(values2fit[:,1:], values2fit[:,0])
 
         print 'Predicting...'
@@ -257,23 +267,41 @@ class RandomForestModel(object):
         prediction_output = forest.predict(values4predict)
 
         print 'Create submission data...'
-        submission_data = N.array(map(heaviside, N.round(prediction_output)))
+        ## Heaviside
+        #submission_data = N.array(map(heaviside, N.round(prediction_output)))
+        submission_data = N.array(map(poisson_cumul, N.round(prediction_output)))
+
+        ##The following is to compare heaviside with poisson
+        '''
+        for ipred in prediction_output:
+            ipred = round(ipred)
+            print ipred
+            if ipred == 0:
+                continue
+            iheavy = heaviside(ipred)
+            ipois = poisson_cumul(ipred)
+            plt.bar(range(len(iheavy)), iheavy, alpha=0.4, color='Red')
+            plt.bar(range(len(ipois)), ipois, alpha=0.4, color='Blue')
+            plt.show()
+            raw_input('press enter...')
+        '''
+
         list_id = df_test['Id'].values
         solution.generate_submission_file(list_id,submission_data)
-        print '\n\n\n Done!'
+        #print '\n\n\n Done!'
 
 
                 
 if __name__=='__main__':
-    rfmodel = RandomForestModel('Data/train_2013.csv', 5000)
-    #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
-    #rfmodel.show_feature('Avg_RR1')
+    #rfmodel = RandomForestModel('Data/train_2013.csv', 2000)
+    rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
+    #rfmodel.show_feature('Avg_Reflectivity')
     coltofit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Range_DistanceToRadar',
                 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex', 'Avg_RR1', 'Range_RR1']
-    rfmodel.fitNscore(coltofit)
+    #rfmodel.fitNscore(coltofit)
     #rfmodel.validation_curves(coltofit)
     #rfmodel.learning_curves(coltofit)
 
     ##Submission
-    #rfmodel.submit(coltofit)
+    rfmodel.submit(coltofit)
