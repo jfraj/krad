@@ -265,12 +265,12 @@ class RandomForestModel(object):
 
                 
 if __name__=='__main__':
-    #rfmodel = RandomForestModel('Data/train_2013.csv', 2000)
-    rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
+    rfmodel = RandomForestModel('Data/train_2013.csv', 5000)
+    #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #rfmodel.show_feature('Avg_RR1')
     coltofit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Range_DistanceToRadar',
-                'Avg_RadarQualityIndex', 'Range_RadarQualityIndex', 'Avg_RR1']
+                'Avg_RadarQualityIndex', 'Range_RadarQualityIndex', 'Avg_RR1', 'Range_RR1']
     rfmodel.fitNscore(coltofit)
     #rfmodel.validation_curves(coltofit)
     #rfmodel.learning_curves(coltofit)

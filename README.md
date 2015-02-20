@@ -23,7 +23,7 @@ Info comes from from the competition's [data page](https://www.kaggle.com/c/how-
 
 ### Polarized
 * **Zdr**:  Differential reflectivity in dB.  Horizontal - Vertical reflectivity.
-* **Kdp**:  Specific differential phase.  It's a _local_ variable, defined as the correlation coefficient slope (as calculated at two distance ranges).  Note: KDP is "displayed" (calculated?) only when RhoHV>0.9.
+* **Kdp**:  Specific differential phase.  It's a _local_ variable, defined as the correlation coefficient slope (as calculated at two distance ranges).  Note: KDP is "displayed" (calculated?) only when RhoHV>0.9. **WARNING**: this variable need to be modified see this [forum entry](https://www.kaggle.com/c/how-much-did-it-rain/forums/t/11500/kdp-0-for-all-datasets)
 * **RR2**:  Rain rate from Zdr-based algorithm
 * **RR3**:  Rain rate from Kdp-based algorithm
 * **RhoHV**:  Correlation coefficient.  Normalized sum of all v(hpol) - v(vpol) in the over all the radar pulses.(hpol/vpol are horizontal/vertical polarization).  Should be between 0,1 but above 1 is related to noise it should _not_ be trunckated to 1.  Pure rain should be very close to 1, while many different scatteres ~0 (i.e. no correlations).  Effectively, RhoHV<0.8 is so uncorrlated, it usually not meteorological e.g. birds.  RhoHV>0.97 is usually _pure_ rain or snow.
