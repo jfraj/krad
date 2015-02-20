@@ -18,6 +18,7 @@ Info comes from from the competition's [data page](https://www.kaggle.com/c/how-
 * **LogWaterVolume**:  How much of radar pixel is filled with water droplets?
 * **MassWeightedMean**:  Mean drop size in mm
 * **MassWeightedSD**:  Standard deviation of drop size
+* **RR1**:  Rain rate from HCA-based algorithm (HCA: Hydrometeor Classification Algorithm)
 * **Expected**: the actual amount of rain reported by the rain gauge for that hour.
 
 ### Polarized
@@ -28,5 +29,4 @@ Info comes from from the competition's [data page](https://www.kaggle.com/c/how-
 * **RhoHV**:  Correlation coefficient.  Normalized sum of all v(hpol) - v(vpol) in the over all the radar pulses.(hpol/vpol are horizontal/vertical polarization).  Should be between 0,1 but above 1 is related to noise it should _not_ be trunckated to 1.  Pure rain should be very close to 1, while many different scatteres ~0 (i.e. no correlations).  Effectively, RhoHV<0.8 is so uncorrlated, it usually not meteorological e.g. birds.  RhoHV>0.97 is usually _pure_ rain or snow.
 
 ### ?polarized (TBD)
-* **RR1**:  Rain rate from HCA-based algorithm
 * **RadarQualityIndex**:  A value from 0 (bad data) to 1 (good data)

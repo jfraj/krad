@@ -63,12 +63,22 @@ class RandomForestModel(object):
                                                                                  axis=1)
         df['Avg_RadarQualityIndex'],  df['Range_RadarQualityIndex'], df['Nval_RadarQualityIndex']=\
           zip(*df['RadarQualityIndex1'].apply(clean.getListReductions))
-        df.drop('Nval_RadarQualityIndex', axis=1, inplace=True)
-        ## Set the above 1 (could not be computed) to 0.5 i.e. average data
+        df.drop('Nval_RadarQualityIndex', axis=1, inplace=True)# Already in Nval
+        ## Set Avg_RadarQualityIndex above 1 (could not be computed) to 0.5 i.e. average data
         ## (any element in the list above 999 will make the average above 1)
         df.loc[df.Avg_RadarQualityIndex > 1, 'Avg_RadarQualityIndex'] = 0.5
         ## Set All the < 0 (something wrong with measurement) as 0 i.e. bad data
         df.loc[df.Avg_RadarQualityIndex < 0, 'Avg_RadarQualityIndex'] = 0.0
+
+        ##RR1
+        df['RR11'] = df[['RadarCounts','RR1']].apply(clean.getIthRadar,
+                                                                                 axis=1)
+        df['Avg_RR1'],  df['Range_RR1'], df['Nval_RR1']=\
+          zip(*df['RR11'].apply(clean.getListReductions))
+        df.drop('Nval_RR1', axis=1, inplace=True)# Already in Nval
+        ## Set negative RR1 (could not be computed) to 0.0 i.e. no rain
+        ## (any element in the list with error code (<=-99000) will make the average negative)
+        df.loc[df.Avg_RR1 < 1, 'Avg_RR1'] = 0.0
 
 
     def show_feature(self, feature):
@@ -85,10 +95,12 @@ class RandomForestModel(object):
 
         ## Plot
         fig = plt.figure()
-        plt.subplot(1,2,1)
+        ax = plt.subplot(1,2,1)
         plt.hist([rain_feature,norain_feature],
                bins=100,normed=True,stacked=False,histtype='stepfilled',
                 label=['Rain','No Rain'],alpha=0.75)
+        if feature in ('Avg_RR1',):
+            ax.set_yscale('log')
         plt.legend(loc='best')
         plt.title(feature)
         plt.subplot(1,2,2)
@@ -225,11 +237,13 @@ class RandomForestModel(object):
         Create the file to submit
         '''
         assert(col2fit[0] == 'Expected')
+        print '\n\nPreparing sumission for the following variables'
+        print col2fit
         ## Prepare train and test data
         print 'Cleaning train data...'
         self.prepare_data(self.df_train)
         print 'Getting and cleaning test data...'
-        #df_test = pd.read_csv('Data/test_2014.csv', nrows=1000)
+        #df_test = pd.read_csv('Data/test_2014.csv', nrows=5000)##For testing
         df_test = pd.read_csv('Data/test_2014.csv')
         self.prepare_data(df_test)
 
@@ -253,13 +267,13 @@ class RandomForestModel(object):
 if __name__=='__main__':
     #rfmodel = RandomForestModel('Data/train_2013.csv', 2000)
     rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
-    #rfmodel.show_feature('Avg_RadarQualityIndex')
+    #rfmodel.show_feature('Avg_RR1')
     coltofit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Range_DistanceToRadar',
-                'Avg_RadarQualityIndex', 'Range_RadarQualityIndex']
-    #rfmodel.fitNscore(coltofit)
+                'Avg_RadarQualityIndex', 'Range_RadarQualityIndex', 'Avg_RR1']
+    rfmodel.fitNscore(coltofit)
     #rfmodel.validation_curves(coltofit)
     #rfmodel.learning_curves(coltofit)
 
     ##Submission
-    rfmodel.submit(coltofit)
+    #rfmodel.submit(coltofit)

@@ -25,7 +25,7 @@ def generate_submission_file(list_id,submission_data, verbose=True):
     Simple script to generate the submission file.
     verbose will have the progression printed out
     """
-
+    nrow = len(list_id)
     file = open('submission.csv','w')
     # wrap the inputs and outputs in csv interpreters
     writer = csv.writer(file, delimiter=',')
@@ -45,7 +45,7 @@ def generate_submission_file(list_id,submission_data, verbose=True):
         solution_row.extend(row)
         writer.writerow(solution_row)
         # Every 1000 rows send an update to the user for progress tracking.
-        if i % 1000  and verbose == 0:
-            logger.info("Completed row %d" % i)
+        if i % 1000 == 0  and verbose:
+            logger.info("Completed row %d (%d%%)" %(i, 100*i/nrow))
 
     return                
