@@ -18,10 +18,13 @@ from sklearn.learning_curve import learning_curve
 import clean, solution
 from score import kaggle_metric, heaviside, poisson_cumul
 
+
 feature_dic = {\
                'Avg_Reflectivity': {'range':[-10, 50], 'log': False},
                'Expected': {'range': [-10, 70], 'log': True},
                'Avg_RR1': {'range': [-10, 70], 'log': True},
+               'Avg_RR2': {'range': [-10, 70], 'log': True},
+               'Avg_RR3': {'range': [-10, 70], 'log': True},
                }
 
 
@@ -83,6 +86,26 @@ class RandomForestModel(object):
         ## Set negative RR1 (could not be computed) to 0.0 i.e. no rain
         ## (any element in the list with error code (<=-99000) will make the average negative)
         df.loc[df.Avg_RR1 < 1, 'Avg_RR1'] = 0.0
+        
+        ##RR2
+        df['RR21'] = df[['RadarCounts','RR2']].apply(clean.getIthRadar,
+                                                                                 axis=1)
+        df['Avg_RR2'],  df['Range_RR2'], df['Nval_RR2']=\
+          zip(*df['RR21'].apply(clean.getListReductions))
+        df.drop('Nval_RR2', axis=1, inplace=True)# Already in Nval
+        ## Set negative RR2 (could not be computed) to 0.0 i.e. no rain
+        ## (any element in the list with error code (<=-99000) will make the average negative)
+        df.loc[df.Avg_RR2 < 1, 'Avg_RR2'] = 0.0
+
+        ##RR3
+        df['RR31'] = df[['RadarCounts','RR3']].apply(clean.getIthRadar,
+                                                                                 axis=1)
+        df['Avg_RR3'],  df['Range_RR3'], df['Nval_RR3']=\
+          zip(*df['RR31'].apply(clean.getListReductions))
+        df.drop('Nval_RR3', axis=1, inplace=True)# Already in Nval
+        ## Set negative RR3 (could not be computed) to 0.0 i.e. no rain
+        ## (any element in the list with error code (<=-99000) will make the average negative)
+        df.loc[df.Avg_RR3 < 1, 'Avg_RR3'] = 0.0
 
 
     def show_feature(self, feature):
@@ -90,6 +113,8 @@ class RandomForestModel(object):
         Plots the given feature after preparing the data set
         """
         from matplotlib.colors import LogNorm
+        import pylab
+
         self.prepare_data(self.df_train)
         ## Separate in rain & no-rain samples
         rain    = self.df_train['Expected'].apply(lambda n: n > 0 )
@@ -102,10 +127,13 @@ class RandomForestModel(object):
                 ranges[0] = feature_dic[feature]['range']
                 log = feature_dic[feature]['log']
 
+
+        #print rain_feature.dtype
+        #print norain_feature.dtype
         ## Plot
         fig = plt.figure()
         ax = plt.subplot(1,2,1)
-        #plt.hist([rain_feature,norain_feature],
+        #plt.hist([rain_feature,norain_feature])
         plt.hist([norain_feature,rain_feature],
                bins=100,normed=True,stacked=False,histtype='stepfilled',
                 label=['No Rain','Rain'],alpha=0.75, range=ranges[0])
@@ -113,12 +141,16 @@ class RandomForestModel(object):
             ax.set_yscale('log')
         plt.legend(loc='best')
         plt.title(feature)
+        plt.grid()
+
         plt.subplot(1,2,2)
         #plt.scatter(self.df_train[rain][feature].get_values(), self.df_train[rain]['Expected'].get_values(), color='Red', label='Rain')
         plt.hist2d(self.df_train[rain][feature].get_values(), self.df_train[rain]['Expected'].get_values(), range=ranges, bins=100, norm=LogNorm())
         plt.xlabel(feature)
         plt.ylabel('Rain gauge')
+        plt.grid()
         fig.show()
+
         raw_input('press enter when finished...')
 
     def fitNscore(self, col2fit, maxdepth=8, nestimators = 30):
@@ -293,15 +325,15 @@ class RandomForestModel(object):
 
                 
 if __name__=='__main__':
-    #rfmodel = RandomForestModel('Data/train_2013.csv', 2000)
-    rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
-    #rfmodel.show_feature('Avg_Reflectivity')
+    rfmodel = RandomForestModel('Data/train_2013.csv', 200000)
+    #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
+    #rfmodel.show_feature('Avg_RR3')
     coltofit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Range_DistanceToRadar',
-                'Avg_RadarQualityIndex', 'Range_RadarQualityIndex', 'Avg_RR1', 'Range_RR1']
-    #rfmodel.fitNscore(coltofit)
+                'Avg_RadarQualityIndex', 'Range_RadarQualityIndex', 'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2','Avg_RR3', 'Range_RR3']
+    rfmodel.fitNscore(coltofit)
     #rfmodel.validation_curves(coltofit)
     #rfmodel.learning_curves(coltofit)
 
     ##Submission
-    rfmodel.submit(coltofit)
+    #rfmodel.submit(coltofit)
