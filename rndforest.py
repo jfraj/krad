@@ -11,6 +11,7 @@ import numpy as N
 
 ## Sklearn
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.learning_curve import validation_curve
 from sklearn.learning_curve import learning_curve
 
@@ -192,7 +193,8 @@ class RandomForestModel(object):
         print '\nPreparing/cleaning data...'
         self.prepare_data(self.df_train, True, col2fit[1:])
         values2fit = self.df_train[col2fit].values
-        forest = RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth)
+        #forest = RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth)
+        forest = RandomForestRegressor(n_estimators=nestimators, max_depth=maxdepth)
         nrows = self.df_train.shape[0]
         nfit = int(0.7*nrows)
 
@@ -220,21 +222,37 @@ class RandomForestModel(object):
         '''
         This is just a test for now
         Since crossvalidation does not take continuous variable
-        So I multiple by 10 and turn into a int...
         '''
+        #score_on = 'accuracy'
+        score_on = 'r2'
+        #score_on = 'mean_squared_error'
         ## Get the data ready to fit
-        self.prepare_data(self.df_train)
+        self.prepare_data(self.df_train, True, col2fit)
 
         ## Turn expected into int
-        self.df_train['Expected'] = self.df_train['Expected'].apply(lambda n: int(round(n)))
+        #self.df_train['Expected'] = self.df_train['Expected'].apply(lambda n: int(round(n)))
+        #self.df_train['Expected'] = self.df_train['Expected'].apply(lambda n: float(n))
         
         values2fit = self.df_train[col2fit].values
-        paramater4validation = "n_estimators"
-        param_range = [2,3,4,5,6,7,8,9,11,15,20]
+
+        paramater4validation = "max_depth"
+        param_range = [5,7,8,9,10,12,20]
+        nestimators = 40
+
+        #paramater4validation = "n_estimators"
+        #max_depth = 8
+        #param_range = [5, 10, 20, 40, 80, 160]
+
+        #train_scores, test_scores = validation_curve(
+        #    RandomForestClassifier(), values2fit[0:,1:], values2fit[0:,0],
+        #    param_name=paramater4validation, param_range=param_range,cv=10,
+        #    scoring="accuracy", n_jobs=1)
+
+        print '\nValidating...'
         train_scores, test_scores = validation_curve(
-            RandomForestClassifier(), values2fit[0:,1:], values2fit[0:,0],
+            RandomForestRegressor(n_estimators = nestimators), values2fit[0:,1:], values2fit[0:,0],
             param_name=paramater4validation, param_range=param_range,cv=10,
-            scoring="accuracy", n_jobs=1)
+            scoring=score_on, verbose = 2, n_jobs=6)
         train_scores_mean = N.mean(train_scores, axis=1)
         train_scores_std = N.std(train_scores, axis=1)
         test_scores_mean = N.mean(test_scores, axis=1)
@@ -242,7 +260,7 @@ class RandomForestModel(object):
         fig = plt.figure()
         plt.title("Validation Curve")
         plt.xlabel(paramater4validation)
-        plt.ylabel("Score")
+        plt.ylabel(score_on)
         plt.plot(param_range, train_scores_mean, label="Training score", color="r")
         plt.fill_between(param_range, train_scores_mean - train_scores_std,
                  train_scores_mean + train_scores_std, alpha=0.2, color="r")
@@ -255,7 +273,7 @@ class RandomForestModel(object):
         fig.show()
         raw_input('press enter when finished...')
 
-    def learning_curves(self, col2fit, score='accuracy', nestimators=40, maxdepth=8, verbose=1):
+    def learning_curves(self, col2fit, score='accuracy',  maxdepth=8,nestimators=40, verbose=1):
         """
         WARNING: turns the Expected into integer
         Creates a plot score vs # of training examples
@@ -281,10 +299,12 @@ class RandomForestModel(object):
 
         ## Number of cpu to use
         ## Making sure there is one free unless there is only one
-        njobs = max(1, multiprocessing.cpu_count() -1)
+        njobs = max(1, int(multiprocessing.cpu_count()/2))
         
         print '\n\nlearning with njobs = {}\n...\n'.format(njobs)
-        train_sizes, train_scores, test_scores = learning_curve(RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth, verbose=verbose), X, y, cv=10, n_jobs=njobs, train_sizes=train_sizes, scoring=score)
+        #train_sizes, train_scores, test_scores = learning_curve(RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth, verbose=verbose), X, y, cv=10, n_jobs=njobs, train_sizes=train_sizes, scoring=score)
+        print '\n\n!!!WARNING!!!Using RF regressor!!!!\n\n'
+        train_sizes, train_scores, test_scores = learning_curve(RandomForestRegressor(n_estimators=nestimators, max_depth=maxdepth, verbose=verbose), X, y, cv=10, n_jobs=njobs, train_sizes=train_sizes, scoring=score)
 
         ## Plotting
         fig = plt.figure()
@@ -392,18 +412,19 @@ class RandomForestModel(object):
 
                 
 if __name__=='__main__':
-    rfmodel = RandomForestModel('Data/train_2013.csv', 20000)
-    #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
+    #rfmodel = RandomForestModel('Data/train_2013.csv', 20000)
+    rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #rfmodel.show_feature('Avg_RR3')
-    #coltofit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
-    #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
-    #            'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2','Avg_RR3', 'Range_RR3']
     coltofit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
-                'Avg_RadarQualityIndex', 'Avg_RR1', 'Range_RR1', 'Range_RR2', 'Range_RR3']
+                'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
+                'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2','Avg_RR3', 'Range_RR3']
+    #coltofit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
+    #            'Avg_RadarQualityIndex', 'Avg_RR1', 'Range_RR1', 'Range_RR2', 'Range_RR3']
     #coltofit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval']
-    rfmodel.fitNscore(coltofit, 9, 40)
+    #rfmodel.fitNscore(coltofit, None, 200)
+    rfmodel.fitNscore(coltofit, 8, 40)
     #rfmodel.validation_curves(coltofit)
-    #rfmodel.learning_curves(coltofit)
+    #rfmodel.learning_curves(coltofit, 'mean_squared_error', None, 40)
 
     ##Submission
     #rfmodel.submit(coltofit, 8, 30, True)
