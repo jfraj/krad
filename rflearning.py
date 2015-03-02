@@ -17,6 +17,7 @@ import gc
 ## Sklearn
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.learning_curve import learning_curve
+from sklearn import grid_search
 
 from rf2steps import RandomForestModel
 
@@ -70,6 +71,52 @@ class clf_learning(RandomForestModel):
         #plt.savefig('learningcurve.png')
         raw_input('press enter when finished...')
 
+    def grid_search(self, col2fit):
+        """
+        Using grid search to find the best parameters
+        """
+        #max_depths = [2,3,4,5,6,7,8,9,11,15,20]
+        #nestimators = [5, 10, 20, 30, 50, 70, 80, 100, 150, 200]
+        max_depths = [8,12,16,20,24]
+        nestimators = [100, 150, 200, 250, 300, 350, 400]
+        parameters = {'max_depth': max_depths, 'n_estimators' : nestimators}
+
+        self.prepare_data(self.df_full, True, col2fit)
+        train_values = self.df_full[col2fit].values
+        target_values = self.df_full['rain'].values
+
+        ## Number of cpu to use
+        ## Making sure there is one free unless there is only one
+        #njobs = max(1, int(0.75*multiprocessing.cpu_count()))
+        njobs = max(1, int(multiprocessing.cpu_count() -1))
+        
+        ## Fit the grid
+        print 'fitting the grid with njobs = {}...'.format(njobs)
+        rf_grid = grid_search.GridSearchCV(RandomForestClassifier(), parameters)
+        rf_grid.fit(train_values, target_values)
+
+        ## Get score
+        score_dict = rf_grid.grid_scores_
+        scores = [x[1] for x in score_dict]
+        scores = N.array(scores).reshape(len(max_depths), len(nestimators))
+
+        ## Plot
+        fig = plt.figure()
+        plt.imshow(scores, interpolation='nearest', cmap=plt.cm.spectral)
+        plt.colorbar()
+        plt.ylabel('max_depths')
+        plt.yticks(N.arange(len(max_depths)), max_depths)
+        plt.xlabel('n_estimators')
+        plt.xticks(N.arange(len(nestimators)), nestimators)
+        plt.gca().invert_yaxis()
+        fig.show()
+        print '----------------------'
+        print 'best parameters:'
+        print rf_grid.best_params_
+        print 
+        print rf_grid.best_score_
+        raw_input('press enter to finished...')
+
 
 
 if __name__=='__main__':
@@ -79,4 +126,5 @@ if __name__=='__main__':
                 'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
                 'Avg_RR3', 'Range_RR3',
                 ]
-    lrn.learn_curve(coltofit)
+    #lrn.learn_curve(coltofit)
+    lrn.grid_search(coltofit)
