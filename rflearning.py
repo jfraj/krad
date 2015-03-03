@@ -1,6 +1,6 @@
 #================================================================================
 #
-# Class for creating random forest learning curves
+# Class for creating random forest learning/validation curves and grid search 
 #
 #================================================================================
 
@@ -17,6 +17,7 @@ import gc
 ## Sklearn
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.learning_curve import learning_curve
+from sklearn.learning_curve import validation_curve
 from sklearn import grid_search
 
 from rf2steps import RandomForestModel
@@ -36,12 +37,14 @@ class clf_learning(RandomForestModel):
         target_values = self.df_full['rain'].values
 
         ##Create a list of nsize incresing #-of-sample to train on
-        nsizes = 10
+        nsizes = 5
         train_sizes = [x / float(nsizes) for x in range(1, nsizes + 1)]
 
         ## Number of cpu to use
         ## Making sure there is one free unless there is only one
-        njobs = max(1, int(multiprocessing.cpu_count()/2))
+        #njobs = max(1, int(multiprocessing.cpu_count()/2))
+        #njobs = max(1, int(0.75*multiprocessing.cpu_count()))
+        njobs = max(1, multiprocessing.cpu_count()-1)
         print '\n\nlearning with njobs = {}\n...\n'.format(njobs)
 
         train_sizes, train_scores, test_scores = learning_curve(RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth, verbose=verbose), train_values, target_values, cv=10, n_jobs=njobs, train_sizes=train_sizes, scoring=score)
@@ -71,6 +74,65 @@ class clf_learning(RandomForestModel):
         #plt.savefig('learningcurve.png')
         raw_input('press enter when finished...')
 
+    def valid_curve(self, col2fit, score='accuracy', verbose=0):
+        """
+        Plots the validation curve
+        """
+        self.prepare_data(self.df_full, True, col2fit)
+        train_values = self.df_full[col2fit].values
+        target_values = self.df_full['rain'].values
+
+        ## Number of cpu to use
+        ## Making sure there is one free unless there is only one
+        njobs = max(1, int(0.75*multiprocessing.cpu_count()))
+        print '\n\nValidating with njobs = {}\n...\n'.format(njobs)
+
+        ## Parameter info is hard-coded for now, should be improved...
+
+        #paramater4validation = "n_estimators"
+        #maxdepth = 16
+        #param_range = [10, 50, 100, 150, 200, 250, 300, 400, 600]
+
+        paramater4validation = "max_depth"
+        nestimators = 150
+        param_range = [8, 10, 12, 14, 15, 16, 17, 18, 20, 24]
+        
+        print '\nValidating on {} with ranges:'.format(paramater4validation)
+        print param_range
+
+        print 'validating...'
+        #train_scores, test_scores = validation_curve(
+        #    RandomForestClassifier(max_depth = maxdepth), train_values, target_values,
+        #    param_name=paramater4validation, param_range=param_range,cv=10,
+        #    scoring=score, verbose = verbose, n_jobs=njobs)
+        
+        train_scores, test_scores = validation_curve(
+            RandomForestClassifier(n_estimators = nestimators), train_values, target_values,
+            param_name=paramater4validation, param_range=param_range,cv=10,
+            scoring=score, verbose = verbose, n_jobs=njobs)
+
+        ## plotting
+        train_scores_mean = N.mean(train_scores, axis=1)
+        train_scores_std = N.std(train_scores, axis=1)
+        test_scores_mean = N.mean(test_scores, axis=1)
+        test_scores_std = N.std(test_scores, axis=1)
+        fig = plt.figure()
+        plt.title("Validation Curve")
+        plt.xlabel(paramater4validation)
+        plt.ylabel(score)
+        plt.plot(param_range, train_scores_mean, label="Training score", color="r")
+        plt.fill_between(param_range, train_scores_mean - train_scores_std,
+                 train_scores_mean + train_scores_std, alpha=0.2, color="r")
+        plt.plot(param_range, test_scores_mean, label="Cross-validation score",
+             color="g")
+        plt.fill_between(param_range, test_scores_mean - test_scores_std,
+                 test_scores_mean + test_scores_std, alpha=0.2, color="g")
+        plt.grid()
+        plt.legend(loc='best')
+        fig.show()
+        raw_input('press enter when finished...')
+
+
     def grid_search(self, col2fit):
         """
         Using grid search to find the best parameters
@@ -78,7 +140,7 @@ class clf_learning(RandomForestModel):
         #max_depths = [2,3,4,5,6,7,8,9,11,15,20]
         #nestimators = [5, 10, 20, 30, 50, 70, 80, 100, 150, 200]
         max_depths = [8,12,16,20,24]
-        nestimators = [100, 150, 200, 250, 300, 350, 400]
+        nestimators = [50, 100, 150, 200, 250, 300]
         parameters = {'max_depth': max_depths, 'n_estimators' : nestimators}
 
         self.prepare_data(self.df_full, True, col2fit)
@@ -121,10 +183,9 @@ class clf_learning(RandomForestModel):
 
 if __name__=='__main__':
     lrn = clf_learning('Data/train_2013.csv', 200000)
-    coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
-                'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
-                'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
-                'Avg_RR3', 'Range_RR3',
-                ]
-    #lrn.learn_curve(coltofit)
-    lrn.grid_search(coltofit)
+    clf_coltofit = ['Avg_Reflectivity', 'Nval',
+                'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
+                'Range_RR1', 'Range_RR2', 'Range_RR3']
+    #lrn.learn_curve(clf_coltofit, 'accuracy', 15, 150)
+    lrn.grid_search(clf_coltofit)
+    #lrn.valid_curve(coltofit, 'accuracy')

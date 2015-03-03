@@ -10,6 +10,10 @@ from sklearn.learning_curve import validation_curve
 from sklearn.learning_curve import learning_curve
 from sklearn import cross_validation
 
+## Ressources
+import multiprocessing
+import gc
+
 import clean, solution
 from score import kaggle_metric, heaviside, poisson_cumul
 
@@ -44,8 +48,9 @@ class RandomForestModel(object):
         df['RadarCounts'] = df['TimeToEnd'].apply(clean.getRadarLength)
 
         ## Add a category column rain/norain (1/0)
-        ## Might consider using a threshold i.e. rain if Expected > threshold 
-        df['rain'] = df['Expected'].apply(lambda x: 1 if x>0 else 0)
+        ## Might consider using a threshold i.e. rain if Expected > threshold
+        if 'Expected' in df.columns.values:
+            df['rain'] = df['Expected'].apply(lambda x: 1 if x>0 else 0)
         
         #######
         ## Adding the mean of variables to fit
@@ -148,6 +153,8 @@ class RandomForestModel(object):
         """
         Fit the regressor for the amount of rain
         """
+        if nrows == 'all':
+            nrows = self.df_full.shape[0]
         print '\nFitting Regressor only raining data with max_depth={} and n_estimators={} the following columns:'.format(maxdepth, nestimators)
         values2fit = self.df_full[:nrows][self.df_full[:nrows]['rain'] == 1][['Expected'] + col2fit].values
         self.rainRegressor = RandomForestRegressor(n_estimators=nestimators, max_depth=maxdepth)
@@ -221,49 +228,48 @@ class RandomForestModel(object):
         print '\nScore(poisson)={}\n\n'.format(score_pois)
 
 
-    def fitNscoreAll(self, col2fit):
+    def fitNscoreAll(self, clf_col2fit, reg_col2fit):
         """
         Fit the classifier and regressor
         Calculate the score of using both
         Note: Eventually there could/should be different column to fit for the classifier and Regressor 
         """
         ##Fit parameters
-        cla_maxdepth, cla_nestimators = 8, 40
-        reg_maxdepth, reg_nestimators = 8, 40
+        clf_maxdepth, clf_nestimators = 15, 150
+        reg_maxdepth, reg_nestimators = 12, 150
         
         print 'Preparing the data...'
-        self.prepare_data(self.df_full, True, col2fit)
+        combined_col = clf_col2fit + list(set(reg_col2fit) - set(clf_col2fit))
+        self.prepare_data(self.df_full, True, combined_col)
 
         ## number of rows used for the fit
         nrows = self.df_full.shape[0]
         nfit = int(0.7*nrows)
 
-        print 'Fitting classifier for rain/norain...'
-        rfmodel.fitClassifier(col2fit, cla_maxdepth, cla_nestimators, nfit)
+        print 'Fitting classifier for rain/norain with maxdepth={} and nestimators={}...'.format(clf_maxdepth, clf_nestimators)
+        rfmodel.fitClassifier(clf_col2fit, clf_maxdepth, clf_nestimators, nfit)
 
-        print 'Fit regressor only where it rained to predict amount of rain'
-        rfmodel.fitRegressor(col2fit, reg_maxdepth, reg_nestimators, nfit)
+        print 'Fit regressor only where it rained to predict amount of rain with maxdepth={} and nestimators={}'.format(reg_maxdepth, reg_nestimators)
+        rfmodel.fitRegressor(reg_col2fit, reg_maxdepth, reg_nestimators, nfit)
 
         ## Cross validate on independant samples
-        values2predict = self.df_full[nfit:][col2fit].values
-        #df_predict = self.df_full[nfit:]['Expected']
+        clf_values2predict = self.df_full[nfit:][clf_col2fit].values
 
         print '\nPredicting rain/norain with classifier...'
-        cla_predict = self.rainClassifier.predict(values2predict)
+        clf_predict = self.rainClassifier.predict(clf_values2predict)
         df_predict = self.df_full[nfit:]['Expected']
-        #print zip(cla_predict, target2predict)
 
         print '\nPredicting amount of rain with regressor...'
-        values2predictrain = self.df_full[nfit:][cla_predict==1][col2fit].values
-        reg_predict = self.rainRegressor.predict(values2predictrain)
+        reg_values2predict = self.df_full[nfit:][clf_predict==1][reg_col2fit].values
+        reg_predict = self.rainRegressor.predict(reg_values2predict)
 
         ## Creating array to compare with expected
         ## First those that were predicted as no-rain
-        targets = self.df_full[nfit:][cla_predict==0]['Expected'].values
-        fullpredict = N.zeros(len(self.df_full[nfit:][cla_predict==0]))
+        targets = self.df_full[nfit:][clf_predict==0]['Expected'].values
+        fullpredict = N.zeros(len(self.df_full[nfit:][clf_predict==0]))
         ## Then add the rain prediction
         fullpredict = N.append(fullpredict, reg_predict)
-        targets = N.append(targets, self.df_full[nfit:][cla_predict==1]['Expected'].values)
+        targets = N.append(targets, self.df_full[nfit:][clf_predict==1]['Expected'].values)
         #print zip(fullpredict, targets)
         print '\nScoring...'
         score = kaggle_metric(N.round(fullpredict), targets)
@@ -271,20 +277,76 @@ class RandomForestModel(object):
         print '\n\nScore(heaviside)={}'.format(score)
         print '\nScore(poisson)={}\n\n'.format(score_pois)
 
+    def submit(self, clf_col2fit, reg_col2fit):
+        """
+        Create csv file for submission
+        """
+        ##Fit parameters
+        clf_maxdepth, clf_nestimators = 15, 150
+        reg_maxdepth, reg_nestimators = 12, 150
+
+        print 'Preparing the data...'
+        combined_col = clf_col2fit + list(set(reg_col2fit) - set(clf_col2fit))
+        self.prepare_data(self.df_full, True, combined_col)
+
+        rfmodel.fitClassifier(clf_col2fit, clf_maxdepth, clf_nestimators)
+
+        print 'Fit regressor only where it rained to predict amount of rain with maxdepth={} and nestimators={}'.format(reg_maxdepth, reg_nestimators)
+        rfmodel.fitRegressor(reg_col2fit, reg_maxdepth, reg_nestimators)
+
+        print '\nGetting and cleaning all test data...'
+        df_test = pd.read_csv('Data/test_2014.csv')
+        #df_test = pd.read_csv('Data/test_2014.csv', nrows=2000)## For testing
         
+        list_id = df_test['Id'].values
+        self.prepare_data(df_test, True, combined_col)
+
+        ## Cross validate on independant samples
+        clf_values2predict = df_test[clf_col2fit].values
+
+        print '\nPredicting rain/norain with classifier...'
+        clf_predict = self.rainClassifier.predict(clf_values2predict)
+
+        print '\nPredicting amount of rain with regressor...'
+        reg_values2predict = df_test[clf_predict==1][reg_col2fit].values
+        reg_predict = self.rainRegressor.predict(reg_values2predict)
+
+        ## Creating prediction array
+        ## First those that were predicted as no-rain
+        fullpredict = N.zeros(len(df_test[clf_predict==0]))
+        ## Then add the rain prediction
+        fullpredict = N.append(fullpredict, reg_predict)
+
+        print '\nCreate submission data...'
+        submission_data = N.array(map(poisson_cumul, N.round(fullpredict)))
+        ## The id have to be reorganized
+        list_id = df_test[clf_predict==0]['Id'].values
+        list_id = N.append(list_id, df_test[clf_predict==1]['Id'].values)
+        solution.generate_submission_file(list_id,submission_data)
+        print '\n\n\n Done!'
 
 
 if __name__=='__main__':
-    #rfmodel = RandomForestModel('Data/train_2013.csv', 20000)
+    #rfmodel = RandomForestModel('Data/train_2013.csv', 2000)
     rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval', 'Avg_RR1', 'Range_RR1', 'Avg_RR2', 'Range_RR2']
-    coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
+    #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
+    #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
+    #            'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
+    #            'Avg_RR3', 'Range_RR3',
+    #            ]
+    clf_coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
-                'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
-                'Avg_RR3', 'Range_RR3',
+                'Avg_RR1', 'Range_RR1', 'Range_RR2', 'Range_RR3',
                 ]
-    #rfmodel.fitClassifier(coltofit)
-    #rfmodel.fitRegressor(coltofit)
-    #rfmodel.fitNscoreClassifier(coltofit)
-    #rfmodel.fitNscoreRegressor(coltofit)
-    rfmodel.fitNscoreAll(coltofit)
+    #reg_coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
+    #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
+    #            'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
+    #            'Avg_RR3', 'Range_RR3',
+    #            ]
+    reg_coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
+                'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
+                'Range_RR1',
+                ]
+    #rfmodel.fitNscoreAll(clf_coltofit, reg_coltofit)
+    rfmodel.submit(clf_coltofit, reg_coltofit)
