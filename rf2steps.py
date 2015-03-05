@@ -283,7 +283,7 @@ class RandomForestModel(object):
         """
         ##Fit parameters
         clf_maxdepth, clf_nestimators = 15, 150
-        reg_maxdepth, reg_nestimators = 12, 150
+        reg_maxdepth, reg_nestimators = 16, 100
 
         print 'Preparing the data...'
         combined_col = clf_col2fit + list(set(reg_col2fit) - set(clf_col2fit))
@@ -339,14 +339,14 @@ if __name__=='__main__':
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
                 'Avg_RR1', 'Range_RR1', 'Range_RR2', 'Range_RR3',
                 ]
-    #reg_coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
-    #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
-    #            'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
-    #            'Avg_RR3', 'Range_RR3',
-    #            ]
     reg_coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
-                'Range_RR1',
+                'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
+                'Avg_RR3', 'Range_RR3',
                 ]
+    #reg_coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
+    #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
+    #            'Range_RR1',
+    #            ]
     #rfmodel.fitNscoreAll(clf_coltofit, reg_coltofit)
     rfmodel.submit(clf_coltofit, reg_coltofit)

@@ -1,6 +1,6 @@
 #================================================================================
 #
-# Class for creating random forest learning/validation curves and grid search 
+# Class for creating random forest classifier learning/validation curves and grid search 
 #
 #================================================================================
 
@@ -26,7 +26,7 @@ from rf2steps import RandomForestModel
 
 class clf_learning(RandomForestModel):
     """
-    Class that will contain learning
+    Class that will contain learning functions
     """
     def learn_curve(self, col2fit, score='accuracy', maxdepth=8, nestimators=40, verbose=0):
         """
