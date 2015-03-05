@@ -102,15 +102,21 @@ class reg_learning(RandomForestModel):
         #param_range = [8, 10, 12, 14, 15, 16, 17, 18, 20, 24]
         paramater4validation = "n_estimators"
         maxdepth = 16
-        param_range = [10, 50, 100, 150, 200, 250, 300, 400, 600, 1000]
+        #param_range = [10, 50, 100, 150, 200, 250, 300, 400, 600, 1000]
+        param_range = [40, 100, 200, 300, 500, 800, 1000]
 
         print '\nValidating on {} with ranges:'.format(paramater4validation)
         print param_range
-        
-        print 'validating...'
+
+        njobs = max(2, multiprocessing.cpu_count()-1)
+        print '\n\nUsing with njobs = {}\n...\n'.format(njobs)
+
+        #ncrossval = 10
+        ncrossval = 5
+        print 'validating with {} cross validations...'.format(ncrossval)
         train_scores, test_scores = validation_curve(
             RandomForestRegressor(max_depth = maxdepth), train_values, target_values,
-            param_name=paramater4validation, param_range=param_range,cv=10,
+            param_name=paramater4validation, param_range=param_range,cv=ncrossval,
             scoring=score, verbose = verbose, n_jobs=njobs)
 
 
@@ -214,5 +220,5 @@ if __name__=='__main__':
     #            'Range_RR1',
     #            ]
     #lrn.learn_curve(coltofit, 'r2', 12, 150)
-    lrn.learn_curve(coltofit, 'r2', 12, 150)
+    lrn.valid_curve(coltofit, 'r2',2)
     #lrn.grid_search(coltofit)
