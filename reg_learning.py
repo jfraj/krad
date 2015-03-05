@@ -81,14 +81,68 @@ class reg_learning(RandomForestModel):
         #print train_scores_mean
         raw_input('press enter when finished...')
 
+        
+    def valid_curve(self, col2fit, score='r2', verbose=0):
+        """
+        Plots the learning curve over raining data
+        """
+        self.prepare_data(self.df_full, True, col2fit)
+
+        print 'Out of {} rows...'.format(self.df_full.shape[0])
+
+        ##Drop the rows where it did not rain
+        self.df_full = self.df_full[self.df_full['rain'] >0]
+        print '...{} have rain and will be used for training'.format(self.df_full.shape[0])
+
+        train_values = self.df_full[col2fit].values
+        target_values = self.df_full['Expected'].values
+
+        #paramater4validation = "max_depth"
+        #nestimators = 150
+        #param_range = [8, 10, 12, 14, 15, 16, 17, 18, 20, 24]
+        paramater4validation = "n_estimators"
+        maxdepth = 16
+        param_range = [10, 50, 100, 150, 200, 250, 300, 400, 600, 1000]
+
+        print '\nValidating on {} with ranges:'.format(paramater4validation)
+        print param_range
+        
+        print 'validating...'
+        train_scores, test_scores = validation_curve(
+            RandomForestRegressor(max_depth = maxdepth), train_values, target_values,
+            param_name=paramater4validation, param_range=param_range,cv=10,
+            scoring=score, verbose = verbose, n_jobs=njobs)
+
+
+        ## plotting
+        train_scores_mean = N.mean(train_scores, axis=1)
+        train_scores_std = N.std(train_scores, axis=1)
+        test_scores_mean = N.mean(test_scores, axis=1)
+        test_scores_std = N.std(test_scores, axis=1)
+        fig = plt.figure()
+        plt.title("Validation Curve")
+        plt.xlabel(paramater4validation)
+        plt.ylabel(score)
+        plt.plot(param_range, train_scores_mean, label="Training score", color="r")
+        plt.fill_between(param_range, train_scores_mean - train_scores_std,
+                 train_scores_mean + train_scores_std, alpha=0.2, color="r")
+        plt.plot(param_range, test_scores_mean, label="Cross-validation score",
+             color="g")
+        plt.fill_between(param_range, test_scores_mean - test_scores_std,
+                 test_scores_mean + test_scores_std, alpha=0.2, color="g")
+        plt.grid()
+        plt.legend(loc='best')
+        fig.show()
+        raw_input('press enter when finished...')
+
     def grid_search(self, col2fit, score='r2'):
         """
         Using grid search to find the best parameters
         """
-        max_depths = [6,8,16,24,32,40,50,60]
-        nestimators = [20, 50, 100, 150, 200, 250, 300, 400, 500]
-        #max_depths = [12,14,16,18,20]
-        #nestimators = [50, 100, 150,200,300,600,800]
+        #max_depths = [6,8,16,24,32,40,50,60]
+        #nestimators = [20, 50, 100, 150, 200, 250, 300, 400, 500]
+        max_depths = [10,11,12,13,14,15]
+        nestimators = [30, 50, 100, 150,200,250,300, 400, 600,800,1000]
         parameters = {'max_depth': max_depths, 'n_estimators' : nestimators}
 
         self.prepare_data(self.df_full, True, col2fit)
@@ -160,4 +214,5 @@ if __name__=='__main__':
     #            'Range_RR1',
     #            ]
     #lrn.learn_curve(coltofit, 'r2', 12, 150)
-    lrn.grid_search(coltofit)
+    lrn.learn_curve(coltofit, 'r2', 12, 150)
+    #lrn.grid_search(coltofit)
