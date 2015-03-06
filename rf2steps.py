@@ -64,6 +64,18 @@ class RandomForestModel(object):
             df['Avg_Reflectivity'],  df['Range_Reflectivity'], df['Nval']=\
               zip(*df['Reflectivity1'].apply(clean.getListReductions))
 
+        ##Zdr
+        if var2prep == 'all' or any("Zdr" in s for s in var2prep):
+            if verbose:
+                print 'Clean Zdr'
+            df['Zdr1'] = df[['RadarCounts','Zdr']].apply(clean.getIthRadar, axis=1)
+            df['Avg_Zdr'],  df['Range_Zdr'], df['Nval_Zdr']=\
+              zip(*df['Zdr1'].apply(clean.getListReductions))
+            df.drop('Nval_Zdr', axis=1, inplace=True)# Already in Nval
+            ## Set negative RR1 (could not be computed) to 0.0 i.e. no rain
+            ## (elements in the list with error code (<=-99000) will make the average negative)
+            df.loc[df.Avg_Zdr < 1, 'Avg_Zdr'] = 0.0
+
         ## Distance to radar
         if var2prep == 'all' or any("DistanceToRadar" in s for s in var2prep):
             if verbose:
@@ -327,26 +339,28 @@ class RandomForestModel(object):
 
 
 if __name__=='__main__':
-    #rfmodel = RandomForestModel('Data/train_2013.csv', 2000)
-    rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
+    rfmodel = RandomForestModel('Data/train_2013.csv', 200000)
+    #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval', 'Avg_RR1', 'Range_RR1', 'Avg_RR2', 'Range_RR2']
-    #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
+    coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
+                'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
+                'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
+                'Avg_RR3', 'Range_RR3', 'Avg_Zdr', 'Range_Zdr',
+                ]
+    clf_coltofit = coltofit
+    reg_coltofit = coltofit
+    #clf_coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
+    #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
+    #            'Avg_RR1', 'Range_RR1', 'Range_RR2', 'Range_RR3',
+    #            ]
+    #reg_coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
     #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
     #            'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
     #            'Avg_RR3', 'Range_RR3',
     #            ]
-    clf_coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
-                'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
-                'Avg_RR1', 'Range_RR1', 'Range_RR2', 'Range_RR3',
-                ]
-    reg_coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
-                'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
-                'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
-                'Avg_RR3', 'Range_RR3',
-                ]
     #reg_coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
     #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
     #            'Range_RR1',
     #            ]
-    #rfmodel.fitNscoreAll(clf_coltofit, reg_coltofit)
-    rfmodel.submit(clf_coltofit, reg_coltofit)
+    rfmodel.fitNscoreAll(clf_coltofit, reg_coltofit)
+    #rfmodel.submit(clf_coltofit, reg_coltofit)

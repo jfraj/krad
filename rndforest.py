@@ -32,6 +32,8 @@ from score import kaggle_metric, heaviside, poisson_cumul
 feature_dic = {\
                'Avg_Reflectivity': {'range':[-10, 50], 'log': False},
                'Expected': {'range': [-10, 70], 'log': True},
+               'Avg_Zdr': {'range': [0, 10], 'log': True},
+               'Range_Zdr': {'range': [0, 30], 'log': True},
                'Avg_RR1': {'range': [-10, 70], 'log': True},
                'Avg_RR2': {'range': [-10, 70], 'log': True},
                'Avg_RR3': {'range': [-10, 70], 'log': True},
@@ -99,6 +101,18 @@ class RandomForestModel(object):
             df.loc[df.Avg_RadarQualityIndex > 1, 'Avg_RadarQualityIndex'] = 0.5
             ## Set All the < 0 (something wrong with measurement) as 0 i.e. bad data
             df.loc[df.Avg_RadarQualityIndex < 0, 'Avg_RadarQualityIndex'] = 0.0
+
+        ##Zdr
+        if var2prep == 'all' or any("Zdr" in s for s in var2prep):
+            if verbose:
+                print 'Clean Zdr'
+            df['Zdr1'] = df[['RadarCounts','Zdr']].apply(clean.getIthRadar, axis=1)
+            df['Avg_Zdr'],  df['Range_Zdr'], df['Nval_Zdr']=\
+              zip(*df['Zdr1'].apply(clean.getListReductions))
+            df.drop('Nval_Zdr', axis=1, inplace=True)# Already in Nval
+            ## Set negative RR1 (could not be computed) to 0.0 i.e. no rain
+            ## (elements in the list with error code (<=-99000) will make the average negative)
+            df.loc[df.Avg_Zdr < 1, 'Avg_Zdr'] = 0.0
 
         ##RR1
         if var2prep == 'all' or any("RR1" in s for s in var2prep):
@@ -412,17 +426,18 @@ class RandomForestModel(object):
 
                 
 if __name__=='__main__':
-    #rfmodel = RandomForestModel('Data/train_2013.csv', 20000)
-    rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
-    #rfmodel.show_feature('Avg_RR3')
+    rfmodel = RandomForestModel('Data/train_2013.csv', 2000)
+    #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
+    rfmodel.show_feature('Avg_Zdr')
     coltofit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
-                'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2','Avg_RR3', 'Range_RR3']
+                'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2','Avg_RR3', 'Range_RR3',
+                'Avg_Zdr', 'Range_Zdr']
     #coltofit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
     #            'Avg_RadarQualityIndex', 'Avg_RR1', 'Range_RR1', 'Range_RR2', 'Range_RR3']
     #coltofit = ['Expected', 'Avg_Reflectivity', 'Range_Reflectivity', 'Nval']
     #rfmodel.fitNscore(coltofit, None, 200)
-    rfmodel.fitNscore(coltofit, 8, 40)
+    #rfmodel.fitNscore(coltofit, 8, 40)
     #rfmodel.validation_curves(coltofit)
     #rfmodel.learning_curves(coltofit, 'mean_squared_error', None, 40)
 
