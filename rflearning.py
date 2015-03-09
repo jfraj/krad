@@ -89,27 +89,27 @@ class clf_learning(RandomForestModel):
 
         ## Parameter info is hard-coded for now, should be improved...
 
-        #paramater4validation = "n_estimators"
-        #maxdepth = 16
-        #param_range = [10, 50, 100, 150, 200, 250, 300, 400, 600]
+        paramater4validation = "n_estimators"
+        maxdepth = 15
+        param_range = [10, 50, 100, 150, 200, 250, 300, 400, 600, 800, 1000, 1500]
 
-        paramater4validation = "max_depth"
-        nestimators = 150
-        param_range = [8, 10, 12, 14, 15, 16, 17, 18, 20, 24]
+        #paramater4validation = "max_depth"
+        #nestimators = 150
+        #param_range = [8, 10, 12, 14, 15, 16, 17, 18, 20, 24]
         
         print '\nValidating on {} with ranges:'.format(paramater4validation)
         print param_range
 
         print 'validating...'
-        #train_scores, test_scores = validation_curve(
-        #    RandomForestClassifier(max_depth = maxdepth), train_values, target_values,
-        #    param_name=paramater4validation, param_range=param_range,cv=10,
-        #    scoring=score, verbose = verbose, n_jobs=njobs)
-        
         train_scores, test_scores = validation_curve(
-            RandomForestClassifier(n_estimators = nestimators), train_values, target_values,
+            RandomForestClassifier(max_depth = maxdepth), train_values, target_values,
             param_name=paramater4validation, param_range=param_range,cv=10,
             scoring=score, verbose = verbose, n_jobs=njobs)
+        
+        #train_scores, test_scores = validation_curve(
+        #    RandomForestClassifier(n_estimators = nestimators), train_values, target_values,
+        #    param_name=paramater4validation, param_range=param_range,cv=10,
+        #    scoring=score, verbose = verbose, n_jobs=njobs)
 
         ## plotting
         train_scores_mean = N.mean(train_scores, axis=1)
@@ -137,10 +137,10 @@ class clf_learning(RandomForestModel):
         """
         Using grid search to find the best parameters
         """
-        #max_depths = [2,3,4,5,6,7,8,9,11,15,20]
-        #nestimators = [5, 10, 20, 30, 50, 70, 80, 100, 150, 200]
-        max_depths = [8,12,16,20,24]
-        nestimators = [50, 100, 150, 200, 250, 300]
+        max_depths = [7,9,11,13,15,18,22,26,30]
+        nestimators = [30, 50, 70, 80, 100, 150, 200, 250, 300, 400, 600]
+        #max_depths = [8,12,16,20,24]
+        #nestimators = [50, 100, 150, 200, 250, 300]
         parameters = {'max_depth': max_depths, 'n_estimators' : nestimators}
 
         self.prepare_data(self.df_full, True, col2fit)
@@ -154,7 +154,8 @@ class clf_learning(RandomForestModel):
         
         ## Fit the grid
         print 'fitting the grid with njobs = {}...'.format(njobs)
-        rf_grid = grid_search.GridSearchCV(RandomForestClassifier(), parameters)
+        rf_grid = grid_search.GridSearchCV(RandomForestClassifier(), parameters,
+                                           n_jobs=njobs, verbose=2)
         rf_grid.fit(train_values, target_values)
 
         ## Get score
@@ -183,9 +184,15 @@ class clf_learning(RandomForestModel):
 
 if __name__=='__main__':
     lrn = clf_learning('Data/train_2013.csv', 200000)
-    clf_coltofit = ['Avg_Reflectivity', 'Nval',
-                'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
-                'Range_RR1', 'Range_RR2', 'Range_RR3']
+    #clf_coltofit = ['Avg_Reflectivity', 'Nval',
+    #            'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
+    #            'Range_RR1', 'Range_RR2', 'Range_RR3']
+    clf_coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
+                'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
+                'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
+                'Avg_RR3', 'Range_RR3', 'Avg_Zdr', 'Range_Zdr',
+                ]
+
     #lrn.learn_curve(clf_coltofit, 'accuracy', 15, 150)
-    lrn.grid_search(clf_coltofit)
-    #lrn.valid_curve(coltofit, 'accuracy')
+    #lrn.grid_search(clf_coltofit)
+    lrn.valid_curve(clf_coltofit, 'accuracy',2)

@@ -80,7 +80,7 @@ def getListReductions(x):
         (or something that can be turned into a numpy array)
     '''
     xarray = N.array(x)
-    return xarray.mean(), xarray.ptp(axis=0), len(xarray)
+    return float(xarray.mean()), xarray.ptp(axis=0), len(xarray)
 
 def getStringReductions(x):
     '''

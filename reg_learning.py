@@ -42,7 +42,7 @@ class reg_learning(RandomForestModel):
         target_values = self.df_full['Expected'].values
 
         ##Create a list of nsize incresing #-of-sample to train on
-        nsizes = 5
+        nsizes = 8
         train_sizes = [x / float(nsizes) for x in range(1, nsizes + 1)]
 
         ## Number of cpu to use
@@ -101,9 +101,10 @@ class reg_learning(RandomForestModel):
         #nestimators = 150
         #param_range = [8, 10, 12, 14, 15, 16, 17, 18, 20, 24]
         paramater4validation = "n_estimators"
-        maxdepth = 16
+        maxdepth = 12
         #param_range = [10, 50, 100, 150, 200, 250, 300, 400, 600, 1000]
-        param_range = [40, 100, 200, 300, 500, 800, 1000]
+        #param_range = [40, 80, 100, 150, 200, 250,300,400,500,600,800,1000,1400]
+        param_range = [30, 50, 80, 120, 160, 200, 250, 300, 400, 600, 800, 1000, 1400]
 
         print '\nValidating on {} with ranges:'.format(paramater4validation)
         print param_range
@@ -111,8 +112,8 @@ class reg_learning(RandomForestModel):
         njobs = max(2, multiprocessing.cpu_count()-1)
         print '\n\nUsing with njobs = {}\n...\n'.format(njobs)
 
-        #ncrossval = 10
-        ncrossval = 5
+        ncrossval = 10
+        #ncrossval = 5
         print 'validating with {} cross validations...'.format(ncrossval)
         train_scores, test_scores = validation_curve(
             RandomForestRegressor(max_depth = maxdepth), train_values, target_values,
@@ -148,7 +149,7 @@ class reg_learning(RandomForestModel):
         #max_depths = [6,8,16,24,32,40,50,60]
         #nestimators = [20, 50, 100, 150, 200, 250, 300, 400, 500]
         max_depths = [10,11,12,13,14,15]
-        nestimators = [30, 50, 100, 150,200,250,300, 400, 600,800,1000]
+        nestimators = [30, 50, 100, 150, 200, 250, 300, 400, 600, 800, 1000]
         parameters = {'max_depth': max_depths, 'n_estimators' : nestimators}
 
         self.prepare_data(self.df_full, True, col2fit)
@@ -213,12 +214,12 @@ if __name__=='__main__':
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
                 'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
-                'Avg_RR3', 'Range_RR3',
+                'Avg_RR3', 'Range_RR3','Avg_Zdr','Range_Zdr'
                 ]
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
     #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
     #            'Range_RR1',
     #            ]
-    #lrn.learn_curve(coltofit, 'r2', 12, 150)
-    lrn.valid_curve(coltofit, 'r2',2)
+    lrn.learn_curve(coltofit, 'r2', 12, 200,1)
+    #lrn.valid_curve(coltofit, 'r2',2)
     #lrn.grid_search(coltofit)
