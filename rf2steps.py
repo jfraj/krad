@@ -103,6 +103,19 @@ class RandomForestModel(object):
             df.loc[df.Avg_HybridScan < 0, 'Avg_HybridScan'] = 0.0
             df.loc[df.Range_HybridScan > 1000, 'Range_HybridScan'] = 0.0
 
+        ##Velocity
+        if var2prep == 'all' or any("Velocity" in s for s in var2prep):
+            if verbose:
+                print 'Clean Velocity'
+            df['Velocity1'] = df[['RadarCounts','Velocity']].apply(clean.getIthRadar, axis=1)
+            df['Avg_Velocity'],  df['Range_Velocity'], df['Nval_Velocity']=\
+              zip(*df['Velocity1'].apply(clean.getListReductions))
+            df.drop('Nval_Velocity', axis=1, inplace=True)# Already in Nval
+            ## Set negative Velocity (could not be computed) to 0.0 i.e. no rain
+            ## (elements in the list with error code (<=-99000) will make the average negative)
+            df.loc[df.Avg_Velocity < 0, 'Avg_Velocity'] = 0.0
+            df.loc[df.Range_Velocity > 1000, 'Range_Velocity'] = 0.0
+
 
         ## Distance to radar
         if var2prep == 'all' or any("DistanceToRadar" in s for s in var2prep):
@@ -375,6 +388,7 @@ if __name__=='__main__':
                 'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
                 'Avg_RR3', 'Range_RR3', 'Avg_Zdr', 'Range_Zdr',
                 'Avg_Composite', 'Range_Composite','Avg_HybridScan', 'Range_HybridScan',
+                'Avg_Velocity', 'Range_Velocity',
                 ]
     clf_coltofit = coltofit
     reg_coltofit = coltofit

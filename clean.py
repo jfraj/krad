@@ -67,7 +67,10 @@ def getIthRadar(x, iradar =1):
     if len(x.iloc[0])<iradar:
         return None## Or should it be NA?
     ## The longer but clearer way
-    listrads = map(float,  x.iloc[1].split())
+    try:
+        listrads = map(float,  x.iloc[1].split())
+    except AttributeError:
+        return (0, )
     rad_start_index = sum(x.iloc[0][:iradar-1])
     rad_stop_index = rad_start_index + x.iloc[0][iradar-1]
     return tuple(listrads[rad_start_index:rad_stop_index])
@@ -80,7 +83,7 @@ def getListReductions(x):
         (or something that can be turned into a numpy array)
     '''
     xarray = N.array(x)
-    return float(xarray.mean()), xarray.ptp(axis=0), len(xarray)
+    return xarray.mean(), xarray.ptp(axis=0), len(xarray)
 
 def getStringReductions(x):
     '''
