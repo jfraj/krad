@@ -90,6 +90,20 @@ class RandomForestModel(object):
             df.loc[df.Avg_Composite < 0, 'Avg_Composite'] = 0.0
             df.loc[df.Range_Composite > 1000, 'Range_Composite'] = 0.0
 
+        ##HybridScan
+        if var2prep == 'all' or any("HybridScan" in s for s in var2prep):
+            if verbose:
+                print 'Clean HybridScan'
+            df['HybridScan1'] = df[['RadarCounts','HybridScan']].apply(clean.getIthRadar, axis=1)
+            df['Avg_HybridScan'],  df['Range_HybridScan'], df['Nval_HybridScan']=\
+              zip(*df['HybridScan1'].apply(clean.getListReductions))
+            df.drop('Nval_HybridScan', axis=1, inplace=True)# Already in Nval
+            ## Set negative HybridScan (could not be computed) to 0.0 i.e. no rain
+            ## (elements in the list with error code (<=-99000) will make the average negative)
+            df.loc[df.Avg_HybridScan < 0, 'Avg_HybridScan'] = 0.0
+            df.loc[df.Range_HybridScan > 1000, 'Range_HybridScan'] = 0.0
+
+
         ## Distance to radar
         if var2prep == 'all' or any("DistanceToRadar" in s for s in var2prep):
             if verbose:
@@ -360,7 +374,7 @@ if __name__=='__main__':
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
                 'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
                 'Avg_RR3', 'Range_RR3', 'Avg_Zdr', 'Range_Zdr',
-                'Avg_Composite', 'Range_Composite'
+                'Avg_Composite', 'Range_Composite','Avg_HybridScan', 'Range_HybridScan',
                 ]
     clf_coltofit = coltofit
     reg_coltofit = coltofit
