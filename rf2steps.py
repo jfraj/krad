@@ -116,6 +116,18 @@ class RandomForestModel(object):
             df.loc[df.Avg_Velocity < 0, 'Avg_Velocity'] = 0.0
             df.loc[df.Range_Velocity > 1000, 'Range_Velocity'] = 0.0
 
+        ##LogWaterVolume
+        if var2prep == 'all' or any("LogWaterVolume" in s for s in var2prep):
+            if verbose:
+                print 'Clean LogWaterVolume'
+            df['LogWaterVolume1'] = df[['RadarCounts','LogWaterVolume']].apply(clean.getIthRadar, axis=1)
+            df['Avg_LogWaterVolume'],  df['Range_LogWaterVolume'], df['Nval_LogWaterVolume']=\
+              zip(*df['LogWaterVolume1'].apply(clean.getListReductions))
+            df.drop('Nval_LogWaterVolume', axis=1, inplace=True)# Already in Nval
+            df['Avg_LogWaterVolume'].fillna(0, inplace=True)
+            df['Range_LogWaterVolume'].fillna(0, inplace=True)
+
+
 
         ## Distance to radar
         if var2prep == 'all' or any("DistanceToRadar" in s for s in var2prep):
@@ -177,6 +189,7 @@ class RandomForestModel(object):
             ## Set negative RR3 (could not be computed) to 0.0 i.e. no rain
             ## (elements in the list with error code (<=-99000) will make the average negative)
             df.loc[df.Avg_RR3 < 1, 'Avg_RR3'] = 0.0
+        ##
 
     def fitClassifier(self, col2fit, maxdepth = 8, nestimators = 40, nrows = 'all'):
         """
@@ -388,7 +401,7 @@ if __name__=='__main__':
                 'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
                 'Avg_RR3', 'Range_RR3', 'Avg_Zdr', 'Range_Zdr',
                 'Avg_Composite', 'Range_Composite','Avg_HybridScan', 'Range_HybridScan',
-                'Avg_Velocity', 'Range_Velocity',
+                'Avg_Velocity', 'Range_Velocity', 'Avg_LogWaterVolume', 'Range_LogWaterVolume',
                 ]
     clf_coltofit = coltofit
     reg_coltofit = coltofit
