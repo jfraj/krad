@@ -146,10 +146,10 @@ class reg_learning(RandomForestModel):
         """
         Using grid search to find the best parameters
         """
-        #max_depths = [6,8,16,24,32,40,50,60]
+        #max_depths = [10,12,14,16,20,24,32,40,50]
         #nestimators = [20, 50, 100, 150, 200, 250, 300, 400, 500]
-        max_depths = [10,11,12,13,14,15]
-        nestimators = [30, 50, 100, 150, 200, 250, 300, 400, 600, 800, 1000]
+        max_depths = [10,11,12,13,14,15,16]
+        nestimators = [30, 50, 100, 150, 200, 250, 300, 400, 600, 1000]
         parameters = {'max_depth': max_depths, 'n_estimators' : nestimators}
 
         self.prepare_data(self.df_full, True, col2fit)
@@ -214,12 +214,21 @@ if __name__=='__main__':
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
                 'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
-                'Avg_RR3', 'Range_RR3','Avg_Zdr','Range_Zdr'
+                'Avg_RR3', 'Range_RR3', 'Avg_Zdr', 'Range_Zdr',
+                'Avg_Composite', 'Range_Composite','Avg_HybridScan', 'Range_HybridScan',
+                'Avg_Velocity', 'Range_Velocity', 'Avg_LogWaterVolume', 'Range_LogWaterVolume',
+                'Avg_MassWeightedMean', 'Range_MassWeightedMean',
+                'Avg_MassWeightedSD', 'Range_MassWeightedSD', 'Avg_RhoHV', 'Range_RhoHV'
                 ]
+    #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
+    #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
+    #            'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
+    #            'Avg_RR3', 'Range_RR3','Avg_Zdr','Range_Zdr'
+    #            ]
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
     #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
     #            'Range_RR1',
     #            ]
-    lrn.learn_curve(coltofit, 'r2', 12, 200,1)
+    #lrn.learn_curve(coltofit, 'r2', 12, 200,1)
     #lrn.valid_curve(coltofit, 'r2',2)
-    #lrn.grid_search(coltofit)
+    lrn.grid_search(coltofit)

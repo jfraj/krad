@@ -149,6 +149,17 @@ class RandomForestModel(object):
             df['Avg_MassWeightedSD'].fillna(0, inplace=True)
             df['Range_MassWeightedSD'].fillna(0, inplace=True)
 
+        ##RhoHV
+        if var2prep == 'all' or any("RhoHV" in s for s in var2prep):
+            if verbose:
+                print 'Clean RhoHV'
+            df['RhoHV1'] = df[['RadarCounts','RhoHV']].apply(clean.getIthRadar, axis=1)
+            df['Avg_RhoHV'],  df['Range_RhoHV'], df['Nval_RhoHV']=\
+              zip(*df['RhoHV1'].apply(clean.getListReductions))
+            df.drop('Nval_RhoHV', axis=1, inplace=True)# Already in Nval
+            #df['Avg_RhoHV'].fillna(0, inplace=True)
+            #df['Range_RhoHV'].fillna(0, inplace=True)
+
 
         ## Distance to radar
         if var2prep == 'all' or any("DistanceToRadar" in s for s in var2prep):
@@ -322,8 +333,8 @@ class RandomForestModel(object):
         Note: Eventually there could/should be different column to fit for the classifier and Regressor 
         """
         ##Fit parameters
-        clf_maxdepth, clf_nestimators = 15, 150
-        reg_maxdepth, reg_nestimators = 12, 150
+        clf_maxdepth, clf_nestimators = 18, 250
+        reg_maxdepth, reg_nestimators = 13, 250
         
         print 'Preparing the data...'
         combined_col = clf_col2fit + list(set(reg_col2fit) - set(clf_col2fit))
@@ -424,7 +435,7 @@ if __name__=='__main__':
                 'Avg_Composite', 'Range_Composite','Avg_HybridScan', 'Range_HybridScan',
                 'Avg_Velocity', 'Range_Velocity', 'Avg_LogWaterVolume', 'Range_LogWaterVolume',
                 'Avg_MassWeightedMean', 'Range_MassWeightedMean',
-                'Avg_MassWeightedSD', 'Range_MassWeightedSD',
+                'Avg_MassWeightedSD', 'Range_MassWeightedSD', 'Avg_RhoHV', 'Range_RhoHV'
                 ]
     clf_coltofit = coltofit
     reg_coltofit = coltofit

@@ -183,16 +183,25 @@ class clf_learning(RandomForestModel):
 
 
 if __name__=='__main__':
-    lrn = clf_learning('Data/train_2013.csv', 200000)
+    lrn = clf_learning('Data/train_2013.csv', 300000)
     #clf_coltofit = ['Avg_Reflectivity', 'Nval',
     #            'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
     #            'Range_RR1', 'Range_RR2', 'Range_RR3']
+    #clf_coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
+    #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
+    #            'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
+    #            'Avg_RR3', 'Range_RR3', 'Avg_Zdr', 'Range_Zdr',
+    #            ]
     clf_coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
                 'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
                 'Avg_RR3', 'Range_RR3', 'Avg_Zdr', 'Range_Zdr',
+                'Avg_Composite', 'Range_Composite','Avg_HybridScan', 'Range_HybridScan',
+                'Avg_Velocity', 'Range_Velocity', 'Avg_LogWaterVolume', 'Range_LogWaterVolume',
+                'Avg_MassWeightedMean', 'Range_MassWeightedMean',
+                'Avg_MassWeightedSD', 'Range_MassWeightedSD', 'Avg_RhoHV', 'Range_RhoHV'
                 ]
 
     #lrn.learn_curve(clf_coltofit, 'accuracy', 15, 150)
-    #lrn.grid_search(clf_coltofit)
-    lrn.valid_curve(clf_coltofit, 'accuracy',2)
+    lrn.grid_search(clf_coltofit)
+    #lrn.valid_curve(clf_coltofit, 'accuracy',2)
