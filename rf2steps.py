@@ -127,6 +127,17 @@ class RandomForestModel(object):
             df['Avg_LogWaterVolume'].fillna(0, inplace=True)
             df['Range_LogWaterVolume'].fillna(0, inplace=True)
 
+        ##MassWeightedMean
+        if var2prep == 'all' or any("MassWeightedMean" in s for s in var2prep):
+            if verbose:
+                print 'Clean MassWeightedMean'
+            df['MassWeightedMean1'] = df[['RadarCounts','MassWeightedMean']].apply(clean.getIthRadar, axis=1)
+            df['Avg_MassWeightedMean'],  df['Range_MassWeightedMean'], df['Nval_MassWeightedMean']=\
+              zip(*df['MassWeightedMean1'].apply(clean.getListReductions))
+            df.drop('Nval_MassWeightedMean', axis=1, inplace=True)# Already in Nval
+            df['Avg_MassWeightedMean'].fillna(0, inplace=True)
+            df['Range_MassWeightedMean'].fillna(0, inplace=True)
+
 
 
         ## Distance to radar
@@ -402,6 +413,7 @@ if __name__=='__main__':
                 'Avg_RR3', 'Range_RR3', 'Avg_Zdr', 'Range_Zdr',
                 'Avg_Composite', 'Range_Composite','Avg_HybridScan', 'Range_HybridScan',
                 'Avg_Velocity', 'Range_Velocity', 'Avg_LogWaterVolume', 'Range_LogWaterVolume',
+                'Avg_MassWeightedMean', 'Range_MassWeightedMean',
                 ]
     clf_coltofit = coltofit
     reg_coltofit = coltofit
