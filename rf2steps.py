@@ -138,6 +138,16 @@ class RandomForestModel(object):
             df['Avg_MassWeightedMean'].fillna(0, inplace=True)
             df['Range_MassWeightedMean'].fillna(0, inplace=True)
 
+        ##MassWeightedSD
+        if var2prep == 'all' or any("MassWeightedSD" in s for s in var2prep):
+            if verbose:
+                print 'Clean MassWeightedSD'
+            df['MassWeightedSD1'] = df[['RadarCounts','MassWeightedSD']].apply(clean.getIthRadar, axis=1)
+            df['Avg_MassWeightedSD'],  df['Range_MassWeightedSD'], df['Nval_MassWeightedSD']=\
+              zip(*df['MassWeightedSD1'].apply(clean.getListReductions))
+            df.drop('Nval_MassWeightedSD', axis=1, inplace=True)# Already in Nval
+            df['Avg_MassWeightedSD'].fillna(0, inplace=True)
+            df['Range_MassWeightedSD'].fillna(0, inplace=True)
 
 
         ## Distance to radar
@@ -414,6 +424,7 @@ if __name__=='__main__':
                 'Avg_Composite', 'Range_Composite','Avg_HybridScan', 'Range_HybridScan',
                 'Avg_Velocity', 'Range_Velocity', 'Avg_LogWaterVolume', 'Range_LogWaterVolume',
                 'Avg_MassWeightedMean', 'Range_MassWeightedMean',
+                'Avg_MassWeightedSD', 'Range_MassWeightedSD',
                 ]
     clf_coltofit = coltofit
     reg_coltofit = coltofit
