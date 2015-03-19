@@ -22,7 +22,7 @@ class RandomForestModel(object):
     """
     A class that will contain and train data for random forest
     """
-    def __init__(self, train_data_fname, nrows = 'all'):
+    def __init__(self, train_data_fname, nrows = 'all', verbose=True):
         """
         Turn data in pandas dataframe
         """
@@ -30,8 +30,9 @@ class RandomForestModel(object):
             self.df_full = pd.read_csv(train_data_fname)
         else:
             self.df_full = pd.read_csv(train_data_fname, nrows=nrows)
-        print 'Creating training data frame with shape'
-        print self.df_full.shape
+        if verbose:
+            print 'Creating training data frame with shape'
+            print self.df_full.shape
 
         ##Define the classifier and regressor variables
         self.rainClassifier = None
@@ -425,7 +426,7 @@ class RandomForestModel(object):
 
 
 if __name__=='__main__':
-    rfmodel = RandomForestModel('Data/train_2013.csv', 700000)
+    rfmodel = RandomForestModel('Data/train_2013.csv', 2000)
     #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval', 'Avg_RR1', 'Range_RR1', 'Avg_RR2', 'Range_RR2']
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
