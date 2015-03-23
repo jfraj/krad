@@ -48,6 +48,11 @@ class RandomForestModel(object):
             print 'Getting radar length'
         df['RadarCounts'] = df['TimeToEnd'].apply(clean.getRadarLength)
 
+        ## Drop rows where the expected rain is above 70
+        ## This will also exclude them for the scoring (our scoring, not the kaggle one)
+        if 'Expected' in df.columns.values:
+            df.drop(df[df['Expected']>70].index, inplace=True)
+
         ## Add a category column rain/norain (1/0)
         ## Might consider using a threshold i.e. rain if Expected > threshold
         if 'Expected' in df.columns.values:
@@ -426,7 +431,7 @@ class RandomForestModel(object):
 
 
 if __name__=='__main__':
-    rfmodel = RandomForestModel('Data/train_2013.csv', 2000)
+    rfmodel = RandomForestModel('Data/train_2013.csv', 700000)
     #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval', 'Avg_RR1', 'Range_RR1', 'Avg_RR2', 'Range_RR2']
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
