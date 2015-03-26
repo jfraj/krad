@@ -22,7 +22,7 @@ class RandomForestModel(object):
     """
     A class that will contain and train data for random forest
     """
-    def __init__(self, train_data_fname, nrows = 'all'):
+    def __init__(self, train_data_fname, nrows = 'all', verbose=True):
         """
         Turn data in pandas dataframe
         """
@@ -30,8 +30,9 @@ class RandomForestModel(object):
             self.df_full = pd.read_csv(train_data_fname)
         else:
             self.df_full = pd.read_csv(train_data_fname, nrows=nrows)
-        print 'Creating training data frame with shape'
-        print self.df_full.shape
+        if verbose:
+            print 'Creating training data frame with shape'
+            print self.df_full.shape
 
         ##Define the classifier and regressor variables
         self.rainClassifier = None
@@ -46,6 +47,11 @@ class RandomForestModel(object):
         if verbose:
             print 'Getting radar length'
         df['RadarCounts'] = df['TimeToEnd'].apply(clean.getRadarLength)
+
+        ## Drop rows where the expected rain is above 70
+        ## This will also exclude them for the scoring (our scoring, not the kaggle one)
+        if 'Expected' in df.columns.values:
+            df.drop(df[df['Expected']>70].index, inplace=True)
 
         ## Add a category column rain/norain (1/0)
         ## Might consider using a threshold i.e. rain if Expected > threshold

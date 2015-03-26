@@ -37,7 +37,7 @@ class clf_learning(RandomForestModel):
         target_values = self.df_full['rain'].values
 
         ##Create a list of nsize incresing #-of-sample to train on
-        nsizes = 5
+        nsizes = 10
         train_sizes = [x / float(nsizes) for x in range(1, nsizes + 1)]
 
         ## Number of cpu to use
@@ -137,7 +137,7 @@ class clf_learning(RandomForestModel):
         """
         Using grid search to find the best parameters
         """
-        max_depths = [7,9,11,13,15,18,22,26,30]
+        max_depths = [9,12,13,15,18,22,26,30,40]
         nestimators = [30, 50, 70, 80, 100, 150, 200, 250, 300, 400, 600]
         #max_depths = [8,12,16,20,24]
         #nestimators = [50, 100, 150, 200, 250, 300]
@@ -183,7 +183,8 @@ class clf_learning(RandomForestModel):
 
 
 if __name__=='__main__':
-    lrn = clf_learning('Data/train_2013.csv', 300000)
+    #lrn = clf_learning('Data/train_2013.csv', 300000)
+    lrn = clf_learning('Data/train_2013.csv', 'all')
     #clf_coltofit = ['Avg_Reflectivity', 'Nval',
     #            'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
     #            'Range_RR1', 'Range_RR2', 'Range_RR3']
@@ -202,6 +203,6 @@ if __name__=='__main__':
                 'Avg_MassWeightedSD', 'Range_MassWeightedSD', 'Avg_RhoHV', 'Range_RhoHV'
                 ]
 
-    #lrn.learn_curve(clf_coltofit, 'accuracy', 15, 150)
-    lrn.grid_search(clf_coltofit)
+    lrn.learn_curve(clf_coltofit, 'accuracy', 15, 200,1)
+    #lrn.grid_search(clf_coltofit)
     #lrn.valid_curve(clf_coltofit, 'accuracy',2)
