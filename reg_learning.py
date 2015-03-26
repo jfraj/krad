@@ -42,7 +42,7 @@ class reg_learning(RandomForestModel):
         target_values = self.df_full['Expected'].values
 
         ##Create a list of nsize incresing #-of-sample to train on
-        nsizes = 8
+        nsizes = 10
         train_sizes = [x / float(nsizes) for x in range(1, nsizes + 1)]
 
         ## Number of cpu to use
@@ -209,8 +209,8 @@ class reg_learning(RandomForestModel):
 
         
 if __name__=='__main__':
-    #lrn = reg_learning('Data/train_2013.csv', 'all')
-    lrn = reg_learning('Data/train_2013.csv', 700000)
+    lrn = reg_learning('Data/train_2013.csv', 'all')
+    #lrn = reg_learning('Data/train_2013.csv', 700000)
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
                 'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
@@ -229,6 +229,6 @@ if __name__=='__main__':
     #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
     #            'Range_RR1',
     #            ]
-    #lrn.learn_curve(coltofit, 'r2', 12, 200,1)
+    lrn.learn_curve(coltofit, 'r2', 12, 200,1)
     #lrn.valid_curve(coltofit, 'r2',2)
-    lrn.grid_search(coltofit)
+    #lrn.grid_search(coltofit)
