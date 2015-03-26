@@ -22,16 +22,20 @@ class RandomForestModel(object):
     """
     A class that will contain and train data for random forest
     """
-    def __init__(self, train_data_fname, nrows = 'all'):
+    def __init__(self, train_data_fname=None, nrows = 'all'):
         """
         Turn data in pandas dataframe
         """
+        if train_data_fname == None:
+            print 'Data will not be created by reading csv file'
+            self.df_full == None
         if nrows == 'all':
             self.df_full = pd.read_csv(train_data_fname)
         else:
             self.df_full = pd.read_csv(train_data_fname, nrows=nrows)
-        print 'Creating training data frame with shape'
-        print self.df_full.shape
+        if nrows != None:
+            print 'Creating training data frame with shape'
+            print self.df_full.shape
 
         ##Define the classifier and regressor variables
         self.rainClassifier = None
@@ -221,7 +225,19 @@ class RandomForestModel(object):
             ## Set negative RR3 (could not be computed) to 0.0 i.e. no rain
             ## (elements in the list with error code (<=-99000) will make the average negative)
             df.loc[df.Avg_RR3 < 1, 'Avg_RR3'] = 0.0
-        ##
+        
+    def prepare_and_save_df(self, col2save, save_name):
+        """
+        Prepare data and save
+        """
+        print '\nWill prepare and save the following column'
+        print col2save
+        print 'Preparing the data...'
+        self.prepare_data(self.df_full, True, col2save)
+        print 'Saving data...'
+        self.df_full.to_hdf('save_name','dftest',mode='w')
+        print 'Done saving dataframe in {}'.format(save_name)
+
 
     def fitClassifier(self, col2fit, maxdepth = 8, nestimators = 40, nrows = 'all'):
         """
@@ -425,7 +441,7 @@ class RandomForestModel(object):
 
 
 if __name__=='__main__':
-    rfmodel = RandomForestModel('Data/train_2013.csv', 700000)
+    rfmodel = RandomForestModel('Data/train_2013.csv', 700)
     #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval', 'Avg_RR1', 'Range_RR1', 'Avg_RR2', 'Range_RR2']
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
@@ -452,5 +468,6 @@ if __name__=='__main__':
     #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
     #            'Range_RR1',
     #            ]
-    rfmodel.fitNscoreAll(clf_coltofit, reg_coltofit)
+    rfmodel.prepare_and_save_df(coltofit, 'saved_df/test.h5')
+    #rfmodel.fitNscoreAll(clf_coltofit, reg_coltofit)
     #rfmodel.submit(clf_coltofit, reg_coltofit)
