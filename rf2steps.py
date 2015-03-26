@@ -425,7 +425,8 @@ class RandomForestModel(object):
 
 
 if __name__=='__main__':
-    rfmodel = RandomForestModel('Data/train_2013.csv', 700000)
+    #rfmodel = RandomForestModel('Data/train_2013.csv', 700000)
+    rfmodel = RandomForestModel('Data/train_2013.csv', 1000)
     #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval', 'Avg_RR1', 'Range_RR1', 'Avg_RR2', 'Range_RR2']
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
