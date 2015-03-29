@@ -22,21 +22,37 @@ class RandomForestModel(object):
     """
     A class that will contain and train data for random forest
     """
-    def __init__(self, train_data_fname, nrows = 'all', verbose=True):
+
+    def __init__(self, train_data_fname=None, nrows = 'all', verbose=True, **kwargs):
         """
         Turn data in pandas dataframe
         """
+
+        ## Define the classifier and regressor variables
+        self.rainClassifier = None
+        self.rainRegressor = None
+        self.iscleaned = False
+        
+        if 'saved_df' in kwargs.keys():
+            print 'Getting saved training data from {}'.format(kwargs['saved_df'])
+            self.df_full = pd.read_hdf(kwargs['saved_df'], 'dftest')
+            print 'Training data frame has shape'
+            print self.df_full.shape
+            self.iscleaned = True
+            return
+
+        if train_data_fname == None:
+            print 'Data will not be created by reading csv file'
+            self.df_full == None
         if nrows == 'all':
             self.df_full = pd.read_csv(train_data_fname)
         else:
             self.df_full = pd.read_csv(train_data_fname, nrows=nrows)
+
         if verbose:
-            print 'Creating training data frame with shape'
+            print 'Training data frame has shape'
             print self.df_full.shape
 
-        ##Define the classifier and regressor variables
-        self.rainClassifier = None
-        self.rainRegressor = None
 
     def prepare_data(self, df, verbose = False, var2prep = 'all'):
         """
@@ -227,7 +243,29 @@ class RandomForestModel(object):
             ## Set negative RR3 (could not be computed) to 0.0 i.e. no rain
             ## (elements in the list with error code (<=-99000) will make the average negative)
             df.loc[df.Avg_RR3 < 1, 'Avg_RR3'] = 0.0
-        ##
+
+        self.iscleaned = True
+        
+    def prepare_and_save_df(self, col2save, save_name):
+        """
+        Prepare data and save the data frame
+        """
+        print '\nWill prepare and save the following column'
+        print col2save
+        print 'Preparing the data...'
+        self.prepare_data(self.df_full, True, col2save)
+        print 'Saving data...'
+        self.df_full.to_hdf(save_name,'dftest',mode='w')
+        print 'Done saving dataframe in {}'.format(save_name)
+        
+    def set_df_from_saved(self, saved_name):
+        """
+        sets self.df_full from saved df
+        """
+        self.df_full = read_hdf(saved_name, 'dftest')
+        ##It is assumed to be cleaned
+        self.iscleaned = True
+
 
     def fitClassifier(self, col2fit, maxdepth = 8, nestimators = 40, nrows = 'all'):
         """
@@ -276,8 +314,9 @@ class RandomForestModel(object):
         Fit on one fraction of the data and score on the rest
         """
 
-        print 'Preparing the data...'
-        self.prepare_data(self.df_full, True, col2fit)
+        if not self.iscleaned:
+            print 'Preparing the data...'
+            self.prepare_data(self.df_full, True, col2fit)
 
         ## number of rows used for the fit
         nrows = self.df_full.shape[0]
@@ -303,8 +342,9 @@ class RandomForestModel(object):
         """
         Fit the regressor only on the data with rain
         """
-        print 'Preparing the data...'
-        self.prepare_data(self.df_full, True, col2fit)
+        if not self.iscleaned:
+            print 'Preparing the data...'
+            self.prepare_data(self.df_full, True, col2fit)
 
         ## number of rows used for the fit
         nrows = self.df_full.shape[0]
@@ -342,9 +382,10 @@ class RandomForestModel(object):
         clf_maxdepth, clf_nestimators = 18, 250
         reg_maxdepth, reg_nestimators = 13, 250
         
-        print 'Preparing the data...'
         combined_col = clf_col2fit + list(set(reg_col2fit) - set(clf_col2fit))
-        self.prepare_data(self.df_full, True, combined_col)
+        if not self.iscleaned:
+            print 'Preparing the data...'
+            self.prepare_data(self.df_full, True, combined_col)
 
         ## number of rows used for the fit
         nrows = self.df_full.shape[0]
@@ -389,9 +430,10 @@ class RandomForestModel(object):
         clf_maxdepth, clf_nestimators = 15, 200
         reg_maxdepth, reg_nestimators = 12, 200
 
-        print 'Preparing the data...'
         combined_col = clf_col2fit + list(set(reg_col2fit) - set(clf_col2fit))
-        self.prepare_data(self.df_full, True, combined_col)
+        if not self.iscleaned:
+            print 'Preparing the data...'
+            self.prepare_data(self.df_full, True, combined_col)
 
         rfmodel.fitClassifier(clf_col2fit, clf_maxdepth, clf_nestimators)
 
@@ -431,8 +473,8 @@ class RandomForestModel(object):
 
 
 if __name__=='__main__':
-    #rfmodel = RandomForestModel('Data/train_2013.csv', 700000)
-    rfmodel = RandomForestModel('Data/train_2013.csv', 1000)
+    rfmodel = RandomForestModel(saved_df = 'saved_df/test.h5')
+    #rfmodel = RandomForestModel('Data/train_2013.csv', 700)
     #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval', 'Avg_RR1', 'Range_RR1', 'Avg_RR2', 'Range_RR2']
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
@@ -459,5 +501,6 @@ if __name__=='__main__':
     #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
     #            'Range_RR1',
     #            ]
+    #rfmodel.prepare_and_save_df(coltofit, 'saved_df/test.h5')
     rfmodel.fitNscoreAll(clf_coltofit, reg_coltofit)
     #rfmodel.submit(clf_coltofit, reg_coltofit)
