@@ -9,6 +9,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.learning_curve import validation_curve
 from sklearn.learning_curve import learning_curve
 from sklearn import cross_validation
+from sklearn.cross_validation import train_test_split
 
 ## Ressources
 import multiprocessing
@@ -309,6 +310,7 @@ class RandomForestModel(object):
         for ifeaturindex in ord_idx[::-1]:
             print '{0} \t: {1}'.format(col2fit[ifeaturindex], round(self.rainRegressor.feature_importances_[ifeaturindex], 2))
             
+
     def fitNscoreClassifier(self, col2fit, maxdepth=8, nestimators=40):
         """
         Fit on one fraction of the data and score on the rest
@@ -318,25 +320,29 @@ class RandomForestModel(object):
             print 'Preparing the data...'
             self.prepare_data(self.df_full, True, col2fit)
 
-        ## number of rows used for the fit
-        nrows = self.df_full.shape[0]
-        nfit = int(0.7*nrows)
-        nscore = nrows - nfit
-        print '\nTraining will be performed with {} rows and scored on {} rows\n'.format(nfit, nscore)
+        test_size = 0.3## fraction kept for testing
+        rnd_seed = 0## for reproducibility 
 
+        features_train, features_test, target_train, target_test = train_test_split(
+            self.df_full[col2fit].values, self.df_full['rain'].values,
+            test_size=test_size, random_state=rnd_seed)
 
-        ## Fit rain-norain
-        rfmodel.fitClassifier(col2fit, maxdepth, nestimators, nfit)
-
-        ## Cross validate on independant samples
-        values2val = self.df_full[nfit:][col2fit].values
-        target2val = self.df_full[nfit:]['rain'].values
-
-        print 'Cross validating on {} rows'.format(values2val.shape[0])
+        print '\nFitting with max_depth={} and n_estimators={}...'.format(maxdepth, nestimators)
+        self.rainClassifier = RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth)
+        self.rainClassifier.fit(features_train, target_train)
         
-        scores = cross_validation.cross_val_score(self.rainClassifier, values2val, target2val, cv=10)
+        ## Number of cpu to use
+        ## Making sure there is one free unless there is only one
+        njobs = max(1, int(0.75*multiprocessing.cpu_count()))
+        print '\n\nValidating with njobs = {}\n...\n'.format(njobs)
+
+
+        print 'Cross validating on {} rows with njobs={}...'.format(target_test.shape[0], njobs)
+        
+        scores = cross_validation.cross_val_score(self.rainClassifier, features_test,
+                                                  target_test, cv=10, n_jobs=njobs)
         print scores
-        print '\n\nCross validation accuracy: %.2f (+/- %.3f)\n' % (round(scores.mean(), 2), round(scores.std() / 2, 3))
+        print '\n\nCross validation accuracy: %.2f (+/- %.3f)\n' % (round(scores.mean(), 3), round(scores.std() / 2, 3))
 
     def fitNscoreRegressor(self, col2fit, maxdepth=8, nestimators=40):
         """
@@ -473,8 +479,9 @@ class RandomForestModel(object):
 
 
 if __name__=='__main__':
-    rfmodel = RandomForestModel(saved_df = 'saved_df/test.h5')
-    #rfmodel = RandomForestModel('Data/train_2013.csv', 700)
+    #rfmodel = RandomForestModel(saved_df = 'saved_df/test30k.h5')
+    #rfmodel = RandomForestModel(saved_df = 'saved_df/test200k.h5')
+    rfmodel = RandomForestModel('Data/train_2013.csv', 30000)
     #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval', 'Avg_RR1', 'Range_RR1', 'Avg_RR2', 'Range_RR2']
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
@@ -501,6 +508,7 @@ if __name__=='__main__':
     #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
     #            'Range_RR1',
     #            ]
-    #rfmodel.prepare_and_save_df(coltofit, 'saved_df/test.h5')
-    rfmodel.fitNscoreAll(clf_coltofit, reg_coltofit)
+    #rfmodel.prepare_and_save_df(coltofit, 'saved_df/test30k.h5')
+    #rfmodel.fitNscoreAll(clf_coltofit, reg_coltofit)
     #rfmodel.submit(clf_coltofit, reg_coltofit)
+    rfmodel.fitNscoreClassifier(clf_coltofit,18, 300)
