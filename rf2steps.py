@@ -331,6 +331,12 @@ class RandomForestModel(object):
         self.rainClassifier = RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth)
         self.rainClassifier.fit(features_train, target_train)
         
+        print 'Done!\n\nFeatures importances'
+        ord_idx = N.argsort(self.rainClassifier.feature_importances_)#Feature index ordered by importance 
+        for ifeaturindex in ord_idx[::-1]:
+            print '{0} \t: {1}'.format(col2fit[ifeaturindex], round(self.rainClassifier.feature_importances_[ifeaturindex], 2))
+
+        
         ## Number of cpu to use
         ## Making sure there is one free unless there is only one
         njobs = max(1, int(0.75*multiprocessing.cpu_count()))
