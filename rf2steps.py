@@ -332,9 +332,12 @@ class RandomForestModel(object):
         self.rainClassifier.fit(features_train, target_train)
         
         print 'Done!\n\nFeatures importances'
+        ordered_feature, ordered_importance = [], []
         ord_idx = N.argsort(self.rainClassifier.feature_importances_)#Feature index ordered by importance 
         for ifeaturindex in ord_idx[::-1]:
             print '{0} \t: {1}'.format(col2fit[ifeaturindex], round(self.rainClassifier.feature_importances_[ifeaturindex], 2))
+            ordered_feature.append(col2fit[ifeaturindex])
+            ordered_importance.append(self.rainClassifier.feature_importances_[ifeaturindex])
 
         
         ## Number of cpu to use
@@ -345,10 +348,24 @@ class RandomForestModel(object):
 
         print 'Cross validating on {} rows with njobs={}...'.format(target_test.shape[0], njobs)
         
-        scores = cross_validation.cross_val_score(self.rainClassifier, features_test,
-                                                  target_test, cv=10, n_jobs=njobs)
-        print scores
-        print '\n\nCross validation accuracy: %.2f (+/- %.3f)\n' % (round(scores.mean(), 3), round(scores.std() / 2, 3))
+        #scores = cross_validation.cross_val_score(self.rainClassifier, features_test,
+        #                                          target_test, cv=10, n_jobs=njobs)
+        #print scores
+        #print '\n\nCross validation accuracy: %.2f (+/- %.3f)\n' % (round(scores.mean(), 3), round(scores.std() / 2, 3))
+
+        ##Plotting the figure importances
+        ordered_feature.reverse()
+        ordered_importance.reverse()
+        fig = plt.figure(figsize = [6,9])
+        y_pos = N.arange(len(ordered_feature))
+        plt.barh(y_pos, ordered_importance, align='center', alpha=0.4)
+        plt.yticks(y_pos, ordered_feature)
+        plt.xlabel('Importance')
+        #plt.tight_layout()
+        plt.subplots_adjust(left=0.35, top=0.95)
+        fig.show()
+        raw_input('press enter when finished')
+        
 
     def fitNscoreRegressor(self, col2fit, maxdepth=8, nestimators=40):
         """
@@ -485,9 +502,9 @@ class RandomForestModel(object):
 
 
 if __name__=='__main__':
-    #rfmodel = RandomForestModel(saved_df = 'saved_df/test30k.h5')
+    rfmodel = RandomForestModel(saved_df = 'saved_df/test30k.h5')
     #rfmodel = RandomForestModel(saved_df = 'saved_df/test200k.h5')
-    rfmodel = RandomForestModel('Data/train_2013.csv', 30000)
+    #rfmodel = RandomForestModel('Data/train_2013.csv', 30000)
     #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval', 'Avg_RR1', 'Range_RR1', 'Avg_RR2', 'Range_RR2']
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
