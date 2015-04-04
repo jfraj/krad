@@ -353,7 +353,7 @@ class RandomForestModel(object):
         #print scores
         #print '\n\nCross validation accuracy: %.2f (+/- %.3f)\n' % (round(scores.mean(), 3), round(scores.std() / 2, 3))
 
-        ##Plotting the figure importances
+        ## Plotting the figure importances
         ordered_feature.reverse()
         ordered_importance.reverse()
         fig = plt.figure(figsize = [6,9])
@@ -364,6 +364,16 @@ class RandomForestModel(object):
         #plt.tight_layout()
         plt.subplots_adjust(left=0.35, top=0.95)
         fig.show()
+
+        ## Plotting the probability distribution
+        ## Only the max probability is shown (using N.amax(target_predicted_proba, 1))
+        ## because the other probability is 1-FirstProb
+        target_predicted_proba = self.rainClassifier.predict_proba(features_test)
+        fig_prob = plt.figure()
+        plt.hist(N.amax(target_predicted_proba, 1), normed=True, bins = 50)
+        plt.xlabel('Prediction probability')
+        plt.yscale('log', nonposy='clip')
+        fig_prob.show()
         raw_input('press enter when finished')
         
 
