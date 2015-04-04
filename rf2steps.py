@@ -348,10 +348,10 @@ class RandomForestModel(object):
 
         print 'Cross validating on {} rows with njobs={}...'.format(target_test.shape[0], njobs)
         
-        #scores = cross_validation.cross_val_score(self.rainClassifier, features_test,
-        #                                          target_test, cv=10, n_jobs=njobs)
-        #print scores
-        #print '\n\nCross validation accuracy: %.2f (+/- %.3f)\n' % (round(scores.mean(), 3), round(scores.std() / 2, 3))
+        scores = cross_validation.cross_val_score(self.rainClassifier, features_test,
+                                                  target_test, cv=10, n_jobs=njobs)
+        print scores
+        print '\n\nCross validation accuracy: %.2f (+/- %.3f)\n' % (round(scores.mean(), 3), round(scores.std() / 2, 3))
 
         ## Plotting the figure importances
         ordered_feature.reverse()
@@ -512,9 +512,9 @@ class RandomForestModel(object):
 
 
 if __name__=='__main__':
-    rfmodel = RandomForestModel(saved_df = 'saved_df/test30k.h5')
+    #rfmodel = RandomForestModel(saved_df = 'saved_df/test30k.h5')
     #rfmodel = RandomForestModel(saved_df = 'saved_df/test200k.h5')
-    #rfmodel = RandomForestModel('Data/train_2013.csv', 30000)
+    rfmodel = RandomForestModel('Data/train_2013.csv', 30000)
     #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval', 'Avg_RR1', 'Range_RR1', 'Avg_RR2', 'Range_RR2']
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
