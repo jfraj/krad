@@ -10,6 +10,8 @@ from sklearn.learning_curve import validation_curve
 from sklearn.learning_curve import learning_curve
 from sklearn import cross_validation
 from sklearn.cross_validation import train_test_split
+from sklearn.metrics import roc_curve
+from sklearn.metrics import auc
 
 ## Ressources
 import multiprocessing
@@ -310,7 +312,24 @@ class RandomForestModel(object):
         for ifeaturindex in ord_idx[::-1]:
             print '{0} \t: {1}'.format(col2fit[ifeaturindex], round(self.rainRegressor.feature_importances_[ifeaturindex], 2))
             
+    def __get_roc_curve(self, target_test, target_predicted_proba):
+        """
+        Returns a figure with roc curve
+        """
+        fpr, tpr, thresholds = roc_curve(target_test, target_predicted_proba[:,1])
+        roc_auc = auc(fpr, tpr)
+        fig_roc = plt.figure()
+        plt.plot(fpr, tpr, label='ROC curve (area = %0.3f)'%roc_auc)
+        plt.plot([0,1], [0,1], 'k--') # random prediction curve
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.0])
+        plt.xlabel('False Positive Rate or (1 - Specifity)')
+        plt.ylabel('True Positive Rate or (sensitivity)')
+        plt.title('Receiver Operating Characteristic')
+        plt.legend(loc="lower right")
+        return fig_roc
 
+        
     def fitNscoreClassifier(self, col2fit, maxdepth=8, nestimators=40):
         """
         Fit on one fraction of the data and score on the rest
@@ -374,6 +393,11 @@ class RandomForestModel(object):
         plt.xlabel('Prediction probability')
         plt.yscale('log', nonposy='clip')
         fig_prob.show()
+
+        ## Plotting ROC curve
+        fig_roc = plt.figure()
+        fig_roc = self.__get_roc_curve(target_test, target_predicted_proba)
+        fig_roc.show()
         raw_input('press enter when finished')
         
 
@@ -512,9 +536,9 @@ class RandomForestModel(object):
 
 
 if __name__=='__main__':
-    #rfmodel = RandomForestModel(saved_df = 'saved_df/test30k.h5')
+    rfmodel = RandomForestModel(saved_df = 'saved_df/test30k.h5')
     #rfmodel = RandomForestModel(saved_df = 'saved_df/test200k.h5')
-    rfmodel = RandomForestModel('Data/train_2013.csv', 30000)
+    #rfmodel = RandomForestModel('Data/train_2013.csv', 2000)
     #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval', 'Avg_RR1', 'Range_RR1', 'Avg_RR2', 'Range_RR2']
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
