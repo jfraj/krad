@@ -317,7 +317,7 @@ class RandomForestModel(object):
         Returns a figure with roc curve
         """
         fpr, tpr, thresholds = roc_curve(target_test, target_predicted_proba[:,1])
-        roc_auc = auc(fpr, tpr)
+        roc_auc = auc(fpr, tpr)  ## Area under the curve
         fig_roc = plt.figure()
         plt.plot(fpr, tpr, label='ROC curve (area = %0.3f)'%roc_auc)
         plt.plot([0,1], [0,1], 'k--') # random prediction curve
@@ -327,12 +327,18 @@ class RandomForestModel(object):
         plt.ylabel('True Positive Rate or (sensitivity)')
         plt.title('Receiver Operating Characteristic')
         plt.legend(loc="lower right")
-        return fig_roc
+        plt.grid()
+        return {'fig' : fig_roc, 'auc' : roc_auc}
 
         
-    def fitNscoreClassifier(self, col2fit, maxdepth=8, nestimators=40):
+    def fitNscoreClassifier(self, col2fit, maxdepth=8, nestimators=40, **kwargs):
         """
         Fit on one fraction of the data and score on the rest
+        
+        Kwargs:
+        showNwaite (bool): show the plots and waits for the user to press enter when finished
+         default:True
+
         """
 
         if not self.iscleaned:
@@ -372,19 +378,19 @@ class RandomForestModel(object):
         print scores
         print '\n\nCross validation accuracy: %.2f (+/- %.3f)\n' % (round(scores.mean(), 3), round(scores.std() / 2, 3))
 
-        ## Plotting the figure importances
+        ## Importances
         ordered_feature.reverse()
         ordered_importance.reverse()
-        fig = plt.figure(figsize = [6,9])
+        fig_importance = plt.figure(figsize = [6,9])
         y_pos = N.arange(len(ordered_feature))
         plt.barh(y_pos, ordered_importance, align='center', alpha=0.4)
         plt.yticks(y_pos, ordered_feature)
         plt.xlabel('Importance')
         #plt.tight_layout()
         plt.subplots_adjust(left=0.35, top=0.95)
-        fig.show()
+        plt.grid()
 
-        ## Plotting the probability distribution
+        ## Probability distribution
         ## Only the max probability is shown (using N.amax(target_predicted_proba, 1))
         ## because the other probability is 1-FirstProb
         target_predicted_proba = self.rainClassifier.predict_proba(features_test)
@@ -392,14 +398,27 @@ class RandomForestModel(object):
         plt.hist(N.amax(target_predicted_proba, 1), normed=True, bins = 50)
         plt.xlabel('Prediction probability')
         plt.yscale('log', nonposy='clip')
-        fig_prob.show()
+        plt.grid()
 
-        ## Plotting ROC curve
+
+        ## ROC curve
         fig_roc = plt.figure()
-        fig_roc = self.__get_roc_curve(target_test, target_predicted_proba)
-        fig_roc.show()
-        raw_input('press enter when finished')
-        
+        roc_dic = self.__get_roc_curve(target_test, target_predicted_proba)
+
+        waitNshow = True
+        if kwargs.has_key('waitNshow'):
+            waitNshow = kwargs['waitNshow']
+        if waitNshow:
+            fig_importance.show()
+            fig_prob.show()
+            roc_dic['fig'].show()
+            raw_input('press enter when finished')
+        out_dic =  {'fig_importance': fig_importance, 'fig_prob':fig_prob, 'fig_roc':roc_dic['fig']}
+        out_dic['features_importances'] = self.rainClassifier.feature_importances_
+        out_dic['scores_mean'] = scores.mean()
+        out_dic['scores_std'] = scores.std()
+        out_dic['roc_auc'] = roc_dic['auc']
+        return out_dic
 
     def fitNscoreRegressor(self, col2fit, maxdepth=8, nestimators=40):
         """
@@ -536,9 +555,9 @@ class RandomForestModel(object):
 
 
 if __name__=='__main__':
-    rfmodel = RandomForestModel(saved_df = 'saved_df/test30k.h5')
+    #rfmodel = RandomForestModel(saved_df = 'saved_df/test30k.h5')
     #rfmodel = RandomForestModel(saved_df = 'saved_df/test200k.h5')
-    #rfmodel = RandomForestModel('Data/train_2013.csv', 2000)
+    rfmodel = RandomForestModel('Data/train_2013.csv', 700000)
     #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval', 'Avg_RR1', 'Range_RR1', 'Avg_RR2', 'Range_RR2']
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
@@ -565,7 +584,7 @@ if __name__=='__main__':
     #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
     #            'Range_RR1',
     #            ]
-    #rfmodel.prepare_and_save_df(coltofit, 'saved_df/test30k.h5')
+    rfmodel.prepare_and_save_df(coltofit, 'saved_df/test700k.h5')
     #rfmodel.fitNscoreAll(clf_coltofit, reg_coltofit)
     #rfmodel.submit(clf_coltofit, reg_coltofit)
-    rfmodel.fitNscoreClassifier(clf_coltofit,18, 300)
+    #rfmodel.fitNscoreClassifier(clf_coltofit,18, 300)
