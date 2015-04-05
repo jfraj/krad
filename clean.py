@@ -1,6 +1,8 @@
 import numpy as N
 import pandas as pd
 
+import logging
+
 
 def getRadarLength(TimeToEnd):
     """
@@ -107,6 +109,7 @@ def get_dataframe_with_split_multiple_radars(input_df):
         new pandas dataframe, with each row corresponding to an individual radar.
     """
 
+
     # Get a list of all the columns that will have to be split by radar.
     columns_to_split = list(input_df.columns)
 
@@ -137,7 +140,12 @@ def get_dataframe_with_split_multiple_radars(input_df):
     list_new_dataframe_dict = []
 
     id_counter = -1  # unique identifier for our split radar entries
-    for index in range(len(input_df)):    
+
+    num_lines = len(input_df)
+    for index in range(num_lines):    
+
+        if index%100 == 0:
+            print 'doing row %i of %i ...'%(index,num_lines)
 
         # create a copy of the row, so we can manipulate
         # it without polluting the initial dataframe. 
