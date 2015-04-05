@@ -191,6 +191,69 @@ def get_dataframe_with_split_multiple_radars(input_df):
     return output_df 
 
 
+def get_clean_average(array):
+    """
+    Remove all error code and NaN values before taking average.
+    If nothing is left, yield NaN.
+    """
+
+    error_codes = [ -99900.0, -99901.0, -99903.0, 999.0]
+
+    # take out the NaN
+    float_array = array[ N.where(N.isfinite(array)) ] 
+
+    I = N.ones_like(float_array)
+    for code in error_codes: 
+        I *= float_array != code
+
+    left_over_array = float_array[ N.where(I) ] 
+
+    if len(left_over_array ) == 0:
+        return N.NaN
+    else:
+        return N.average(left_over_array)
+
+def get_clean_average_dataframe(input_df):
+    """
+    Computes the averages of time series, removing missing data (or error codes).
+    When this is impossible, the missing value is replaced by the column average.
+    Input:
+        pandas dataframe from function "get_dataframe_with_split_multiple_radars"
+    Output:
+        new pandas dataframe, with averages replacing time series
+    """
+    # Get a list of all the columns that will have to be split by radar.
+    columns_to_split = list(input_df.columns)
+
+    dict_averages = {}
+    for key in ['Id', 'Expected', 'number_of_radars']:
+        columns_to_split.remove(key)       # not a time series!
+
+        dict_averages[key] = input_df[key].values
+
+
+    for col in columns_to_split:
+        # compute the average of the time series
+        avg = input_df[col].apply(get_clean_average).values
+
+        # replace missing values by column average
+        I_nan = N.where(N.isnan(avg))[0]
+
+        if len(I_nan) > 0:
+            I_finite = N.where(N.isfinite(avg))[0]
+            finite_average = N.average(avg[I_finite])
+            avg[I_nan] = finite_average 
+
+            #print c, I_nan.shape, finite_average 
+        dict_averages['avg_%s'%col] = avg
+
+
+    # create the new dataframe from the list of dictionaries
+    output_df = pd.DataFrame(dict_averages)
+
+    return output_df 
+
+
     
 if __name__ == "__main__":
     #print getRadarLength([5,4,3,2,1])
