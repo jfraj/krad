@@ -233,6 +233,7 @@ def get_clean_average_dataframe(input_df):
 
 
     for col in columns_to_split:
+        print 'Averaging column %s...'%col
         # compute the average of the time series
         avg = input_df[col].apply(get_clean_average).values
 
