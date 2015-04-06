@@ -1,6 +1,7 @@
 import os, sys
 from rf2steps import RandomForestModel
 import rflearning
+import numpy as N
 
 def make_clf_grid_report(classifier, col2fit, rep_label = 'test'):
     """
@@ -60,7 +61,7 @@ def make_clf_score_report(classifier, col2fit, rep_label = 'test'):
     if not os.path.exists(report_dir):
         print 'creating report directory: %s'%report_dir
         os.mkdir(report_dir)
-    reportname = os.path.join(report_dir, 'clf__report.txt')
+    reportname = os.path.join(report_dir, 'clf_score_report.txt')
 
     if os.path.exists(reportname):
         if raw_input('Report with this name already exists...\
@@ -68,9 +69,11 @@ def make_clf_score_report(classifier, col2fit, rep_label = 'test'):
             print '\n\nAborting!\n\n'
             sys.exit(1)
 
-    ## Some parameters
+    ## hyperparameters
     maxdepth = 18
     nestimators = 300
+    #maxdepth = 5
+    #nestimators = 30
 
     print 'making classifier score report with {}'.format(classifier)
     
@@ -80,13 +83,23 @@ def make_clf_score_report(classifier, col2fit, rep_label = 'test'):
     frep.write('\ncolumns=%s\n'%str(col2fit))
     
     #rfmodel = RandomForestModel('Data/train_2013.csv', 1000)## For testing
-    rfmodel = RandomForestModel(saved_df = classifier)
+    #rfmodel = RandomForestModel(saved_df = classifier)
+    rfmodel = rflearning.clf_learning(saved_df = classifier)
+
+    ## Scoring
     report_dic = rfmodel.fitNscoreClassifier(col2fit, maxdepth, nestimators, waitNshow=False)
     frep.write('\nfeature importances:\n%s\n'%str(report_dic['features_importances']))
     frep.write('\n\nCross validation accuracy (std): %f (%f)\n'%(
         report_dic['scores_mean'], report_dic['scores_std']))
     frep.write('\n ROC area under curve: %f\n'%report_dic['roc_auc'])
 
+    ##Learning curve
+    learn_dic = rfmodel.learn_curve(
+        col2fit, 'accuracy', maxdepth, nestimators, verbose=1, waitNshow=False, nsizes=10)
+    frep.write('\n train learning scores: %s\n'%str(learn_dic['train_scores']))
+    frep.write('\n test learning scores: %s\n'%str(learn_dic['test_scores']))
+
+    
     frep.write('\n\n\n\n'+100*'-' + '\n End of report\n')
 
     ## Save figures
@@ -94,6 +107,7 @@ def make_clf_score_report(classifier, col2fit, rep_label = 'test'):
     report_dic['fig_importance'].savefig(os.path.join(report_dir, 'clf_fig_importance.%s'%save_type))
     report_dic['fig_prob'].savefig(os.path.join(report_dir, 'clf_fig_prob.%s'%save_type))
     report_dic['fig_roc'].savefig(os.path.join(report_dir, 'clf_fig_roc.%s'%save_type))
+    learn_dic['fig_learning'].savefig(os.path.join(report_dir, 'clf_fig_learn.%s'%save_type))
 
     frep.close()
     print '\nFinished writing report file:\n%s'%reportname
@@ -109,5 +123,6 @@ if __name__=="__main__":
                 'Avg_MassWeightedSD', 'Range_MassWeightedSD', 'Avg_RhoHV', 'Range_RhoHV'
                 ]
 
-    #make_clf_score_report('saved_df/test30k.h5', coltofit, 'test30k')
-    make_clf_grid_report('saved_df/test30k.h5', coltofit, 'test30k')
+    make_clf_score_report('saved_df/test30k.h5', coltofit, 'test30k')
+    #make_clf_score_report('saved_df/test700k.h5', coltofit, 'test700k')
+    #make_clf_grid_report('saved_df/test30k.h5', coltofit, 'test30k')

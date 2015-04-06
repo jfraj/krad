@@ -63,6 +63,10 @@ class RandomForestModel(object):
         var2prep is a list of variables that will be needed.
         This will save time by cleaning only the needed variables
         """
+        if self.iscleaned:
+                print 'Data already cleaned'
+                return
+
         if verbose:
             print 'Getting radar length'
         df['RadarCounts'] = df['TimeToEnd'].apply(clean.getRadarLength)

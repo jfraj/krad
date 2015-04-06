@@ -28,17 +28,22 @@ class clf_learning(RandomForestModel):
     """
     Class that will contain learning functions
     """
-    def learn_curve(self, col2fit, score='accuracy', maxdepth=8, nestimators=40, verbose=0):
+    def learn_curve(self, col2fit, score='accuracy', maxdepth=8, nestimators=40, **kwargs):
         """
         Plots the learning curve
         """
+        verbose = kwargs.get('verbose', 0)
+        nsizes = kwargs.get('nsizes', 8)
+        waitNshow = kwargs.get('waitNshow', True)
+        
         self.prepare_data(self.df_full, True, col2fit)
         train_values = self.df_full[col2fit].values
         target_values = self.df_full['rain'].values
 
         ##Create a list of nsize incresing #-of-sample to train on
-        nsizes = 10
         train_sizes = [x / float(nsizes) for x in range(1, nsizes + 1)]
+        print 'training will be performed on the following sizes'
+        print train_sizes
 
         ## Number of cpu to use
         ## Making sure there is one free unless there is only one
@@ -69,10 +74,11 @@ class clf_learning(RandomForestModel):
         plt.plot(train_sizes, test_scores_mean, 'o-', color="g",
              label="Cross-validation score")
         plt.legend(loc="best")
-        print 'Done'
-        fig.show()
-        #plt.savefig('learningcurve.png')
-        raw_input('press enter when finished...')
+        print 'Learning curve finisher'
+        if waitNshow:
+            fig.show()
+            raw_input('press enter when finished...')
+        return {'fig_learning': fig, 'train_scores': train_scores, 'test_scores':test_scores}
 
     def valid_curve(self, col2fit, score='accuracy', verbose=0):
         """
@@ -140,11 +146,17 @@ class clf_learning(RandomForestModel):
          showNwaite (bool): show the plots and waits for the user to press enter when finished
          default:True
         """
-        #max_depths = [9,12,13,15,18,22,26,30,40]
-        #nestimators = [30, 50, 70, 80, 100, 150, 200, 250, 300, 400, 600]
-        max_depths = [8,20,30]
+        max_depths = [9,12,13,15,18,22,26,30,40]
+        nestimators = [30, 50, 70, 80, 100, 150, 200, 250, 300, 400, 600]
+        #max_depths = [8,20,30]
         #nestimators = [50, 200, 300]
-        nestimators = [10, 20, 30]
+        #nestimators = [10, 20, 30]
+        if kwargs.has_key('max_depths'):
+            max_depths = kwargs['max_depths']
+        if kwargs.has_key('nestimators'):
+            nestimators = kwargs['nestimators']
+
+        
         parameters = {'max_depth': max_depths, 'n_estimators' : nestimators}
 
         if not self.iscleaned:
@@ -244,7 +256,7 @@ class clf_learning(RandomForestModel):
 
 
 if __name__=='__main__':
-    #lrn = clf_learning('Data/train_2013.csv', 700000)
+    lrn = clf_learning('Data/train_2013.csv', 3000)
     #lrn = clf_learning(saved_df='saved_df/test30k.h5')
     #lrn = clf_learning(saved_df='saved_df/test200k.h5')
     #lrn = clf_learning('Data/train_2013.csv', 'all')
