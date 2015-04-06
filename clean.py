@@ -1,6 +1,8 @@
 import numpy as N
 import pandas as pd
 
+import logging
+
 
 def getRadarLength(TimeToEnd):
     """
@@ -107,6 +109,7 @@ def get_dataframe_with_split_multiple_radars(input_df):
         new pandas dataframe, with each row corresponding to an individual radar.
     """
 
+
     # Get a list of all the columns that will have to be split by radar.
     columns_to_split = list(input_df.columns)
 
@@ -137,7 +140,12 @@ def get_dataframe_with_split_multiple_radars(input_df):
     list_new_dataframe_dict = []
 
     id_counter = -1  # unique identifier for our split radar entries
-    for index in range(len(input_df)):    
+
+    num_lines = len(input_df)
+    for index in range(num_lines):    
+
+        if index%100 == 0:
+            print 'doing row %i of %i ...'%(index,num_lines)
 
         # create a copy of the row, so we can manipulate
         # it without polluting the initial dataframe. 
@@ -179,6 +187,70 @@ def get_dataframe_with_split_multiple_radars(input_df):
 
     # create the new dataframe from the list of dictionaries
     output_df = pd.DataFrame(list_new_dataframe_dict)[right_column_order].set_index('unique_Id')
+
+    return output_df 
+
+
+def get_clean_average(array):
+    """
+    Remove all error code and NaN values before taking average.
+    If nothing is left, yield NaN.
+    """
+
+    error_codes = [ -99900.0, -99901.0, -99903.0, 999.0]
+
+    # take out the NaN
+    float_array = array[ N.where(N.isfinite(array)) ] 
+
+    I = N.ones_like(float_array)
+    for code in error_codes: 
+        I *= float_array != code
+
+    left_over_array = float_array[ N.where(I) ] 
+
+    if len(left_over_array ) == 0:
+        return N.NaN
+    else:
+        return N.average(left_over_array)
+
+def get_clean_average_dataframe(input_df):
+    """
+    Computes the averages of time series, removing missing data (or error codes).
+    When this is impossible, the missing value is replaced by the column average.
+    Input:
+        pandas dataframe from function "get_dataframe_with_split_multiple_radars"
+    Output:
+        new pandas dataframe, with averages replacing time series
+    """
+    # Get a list of all the columns that will have to be split by radar.
+    columns_to_split = list(input_df.columns)
+
+    dict_averages = {}
+    for key in ['Id', 'Expected', 'number_of_radars']:
+        columns_to_split.remove(key)       # not a time series!
+
+        dict_averages[key] = input_df[key].values
+
+
+    for col in columns_to_split:
+        print 'Averaging column %s...'%col
+        # compute the average of the time series
+        avg = input_df[col].apply(get_clean_average).values
+
+        # replace missing values by column average
+        I_nan = N.where(N.isnan(avg))[0]
+
+        if len(I_nan) > 0:
+            I_finite = N.where(N.isfinite(avg))[0]
+            finite_average = N.average(avg[I_finite])
+            avg[I_nan] = finite_average 
+
+            #print c, I_nan.shape, finite_average 
+        dict_averages['avg_%s'%col] = avg
+
+
+    # create the new dataframe from the list of dictionaries
+    output_df = pd.DataFrame(dict_averages)
 
     return output_df 
 
