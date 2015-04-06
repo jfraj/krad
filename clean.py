@@ -191,10 +191,9 @@ def get_dataframe_with_split_multiple_radars(input_df):
     return output_df 
 
 
-def get_clean_average(array):
+def get_clean_array(array):
     """
-    Remove all error code and NaN values before taking average.
-    If nothing is left, yield NaN.
+    Remove all error code and NaN values.
     """
 
     error_codes = [ -99900.0, -99901.0, -99903.0, 999.0]
@@ -208,19 +207,41 @@ def get_clean_average(array):
 
     left_over_array = float_array[ N.where(I) ] 
 
+    return left_over_array 
+
+
+def get_clean_average(array):
+    """
+    Remove all error code and NaN values before taking average and range.
+    If nothing is left, yield NaN.
+    """
+    left_over_array = get_clean_array(array)
+
     if len(left_over_array ) == 0:
         return N.NaN
     else:
         return N.average(left_over_array)
 
-def get_clean_average_dataframe(input_df):
+def get_clean_range(array):
     """
-    Computes the averages of time series, removing missing data (or error codes).
+    Remove all error code and NaN values before taking average and range.
+    If nothing is left, yield NaN.
+    """
+    left_over_array = get_clean_array(array)
+
+    if len(left_over_array ) == 0:
+        return N.NaN
+    else:
+        return N.ptp(left_over_array)
+
+def get_clean_average_and_range_dataframe(input_df):
+    """
+    Computes the averages and ranges of time series, removing missing data (or error codes).
     When this is impossible, the missing value is replaced by the column average.
     Input:
         pandas dataframe from function "get_dataframe_with_split_multiple_radars"
     Output:
-        new pandas dataframe, with averages replacing time series
+        new pandas dataframe, with averages and ranges replacing time series
     """
     # Get a list of all the columns that will have to be split by radar.
     columns_to_split = list(input_df.columns)
@@ -233,7 +254,7 @@ def get_clean_average_dataframe(input_df):
 
 
     for col in columns_to_split:
-        print 'Averaging column %s...'%col
+        print 'Averaging column %s ...'%col
         # compute the average of the time series
         avg = input_df[col].apply(get_clean_average).values
 
@@ -241,12 +262,33 @@ def get_clean_average_dataframe(input_df):
         I_nan = N.where(N.isnan(avg))[0]
 
         if len(I_nan) > 0:
-            I_finite = N.where(N.isfinite(avg))[0]
+            print '   - There are %i NaN averages'%len(I_nan)
+            I_finite       = N.where(N.isfinite(avg))[0]
+            print '   - There are %i finite averages'%len(I_finite)
+
             finite_average = N.average(avg[I_finite])
-            avg[I_nan] = finite_average 
+            avg[I_nan]     = finite_average 
 
             #print c, I_nan.shape, finite_average 
         dict_averages['avg_%s'%col] = avg
+
+        print 'Computing range for column %s ...'%col
+        # compute the average of the time series
+        rng = input_df[col].apply(get_clean_range).values
+
+        # replace missing values by column average
+        I_nan = N.where(N.isnan(rng))[0]
+
+        if len(I_nan) > 0:
+            print '   - There are %i NaN ranges'%len(I_nan)
+            I_finite     = N.where(N.isfinite(rng))[0]
+            print '   - There are %i finite ranges'%len(I_finite)
+            finite_range = N.average(rng[I_finite])
+            rng[I_nan]   = finite_range
+
+            #print c, I_nan.shape, finite_average 
+        dict_averages['range_%s'%col] = rng
+
 
 
     # create the new dataframe from the list of dictionaries
