@@ -92,6 +92,8 @@ def getStringReductions(x):
         x : should be a space-separated value string
     '''
     xarray = N.array(map(float, x.split()))
+    ##Exclude the error terms -99000, -99001, -99003
+    xarray = xarray[xarray > -99000]
     return xarray.mean(), xarray.ptp(axis=0), len(xarray)
 
     

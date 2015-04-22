@@ -473,8 +473,8 @@ class RandomForestModel(object):
 
 
 if __name__=='__main__':
-    rfmodel = RandomForestModel(saved_df = 'saved_df/test.h5')
-    #rfmodel = RandomForestModel('Data/train_2013.csv', 700)
+    #rfmodel = RandomForestModel(saved_df = 'saved_df/test.h5')
+    rfmodel = RandomForestModel('Data/train_2013.csv', 700000)
     #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval', 'Avg_RR1', 'Range_RR1', 'Avg_RR2', 'Range_RR2']
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
@@ -501,6 +501,6 @@ if __name__=='__main__':
     #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
     #            'Range_RR1',
     #            ]
-    #rfmodel.prepare_and_save_df(coltofit, 'saved_df/test.h5')
-    rfmodel.fitNscoreAll(clf_coltofit, reg_coltofit)
+    rfmodel.prepare_and_save_df(coltofit, 'saved_df/test700k.h5')
+    #rfmodel.fitNscoreAll(clf_coltofit, reg_coltofit)
     #rfmodel.submit(clf_coltofit, reg_coltofit)
