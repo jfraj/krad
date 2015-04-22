@@ -9,6 +9,9 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.learning_curve import validation_curve
 from sklearn.learning_curve import learning_curve
 from sklearn import cross_validation
+from sklearn.cross_validation import train_test_split
+from sklearn.metrics import roc_curve
+from sklearn.metrics import auc
 
 ## Ressources
 import multiprocessing
@@ -32,7 +35,7 @@ class RandomForestModel(object):
         self.rainClassifier = None
         self.rainRegressor = None
         self.iscleaned = False
-        
+
         if 'saved_df' in kwargs.keys():
             print 'Getting saved training data from {}'.format(kwargs['saved_df'])
             self.df_full = pd.read_hdf(kwargs['saved_df'], 'dftest')
@@ -60,6 +63,10 @@ class RandomForestModel(object):
         var2prep is a list of variables that will be needed.
         This will save time by cleaning only the needed variables
         """
+        if self.iscleaned:
+                print 'Data already cleaned'
+                return
+
         if verbose:
             print 'Getting radar length'
         df['RadarCounts'] = df['TimeToEnd'].apply(clean.getRadarLength)
@@ -73,7 +80,7 @@ class RandomForestModel(object):
         ## Might consider using a threshold i.e. rain if Expected > threshold
         if 'Expected' in df.columns.values:
             df['rain'] = df['Expected'].apply(lambda x: 1 if x>0 else 0)
-        
+
         #######
         ## Adding the mean of variables to fit
 
@@ -190,7 +197,7 @@ class RandomForestModel(object):
             df['DistanceToRadar1'] = df[['RadarCounts','DistanceToRadar']].apply(clean.getIthRadar, axis=1)
             df['Avg_DistanceToRadar'],  df['Range_DistanceToRadar'], df['Nval_DistanceToRadar']=\
               zip(*df['DistanceToRadar1'].apply(clean.getListReductions))
-            ## Remove the Nval_xxx it's already in the Nval column 
+            ## Remove the Nval_xxx it's already in the Nval column
             df.drop('Nval_DistanceToRadar', axis=1, inplace=True)
 
         ## Radar quality index
@@ -245,7 +252,7 @@ class RandomForestModel(object):
             df.loc[df.Avg_RR3 < 1, 'Avg_RR3'] = 0.0
 
         self.iscleaned = True
-        
+
     def prepare_and_save_df(self, col2save, save_name):
         """
         Prepare data and save the data frame
@@ -257,7 +264,7 @@ class RandomForestModel(object):
         print 'Saving data...'
         self.df_full.to_hdf(save_name,'dftest',mode='w')
         print 'Done saving dataframe in {}'.format(save_name)
-        
+
     def set_df_from_saved(self, saved_name):
         """
         sets self.df_full from saved df
@@ -270,7 +277,7 @@ class RandomForestModel(object):
     def fitClassifier(self, col2fit, maxdepth = 8, nestimators = 40, nrows = 'all'):
         """
         Fit the classifier for rain/norain
-        """        
+        """
         ##Fit whether it rained or not with a classifier
         print '\nFitting classifier for rain-norain with max_depth={} and n_estimators={} the following columns:'.format(maxdepth, nestimators)
         print col2fit
@@ -281,12 +288,12 @@ class RandomForestModel(object):
         values2fit = self.df_full[:nrows][col2fit].values
         targets = self.df_full[:nrows]['rain'].values
         self.rainClassifier = RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth)
-        
+
         print '\nFitting...'
         self.rainClassifier.fit(values2fit, targets)
 
         print 'Done!\n\nFeatures importances'
-        ord_idx = N.argsort(self.rainClassifier.feature_importances_)#Feature index ordered by importance 
+        ord_idx = N.argsort(self.rainClassifier.feature_importances_)#Feature index ordered by importance
         for ifeaturindex in ord_idx[::-1]:
             print '{0} \t: {1}'.format(col2fit[ifeaturindex], round(self.rainClassifier.feature_importances_[ifeaturindex], 2))
         print("Classifier (self) score is ", self.rainClassifier.score(values2fit, targets))
@@ -305,38 +312,117 @@ class RandomForestModel(object):
         self.rainRegressor.fit(values2fit[:,1:], values2fit[:,0])
 
         print 'Done!\n\nFeatures importances'
-        ord_idx = N.argsort(self.rainRegressor.feature_importances_)#Feature index ordered by importance 
+        ord_idx = N.argsort(self.rainRegressor.feature_importances_)#Feature index ordered by importance
         for ifeaturindex in ord_idx[::-1]:
             print '{0} \t: {1}'.format(col2fit[ifeaturindex], round(self.rainRegressor.feature_importances_[ifeaturindex], 2))
-            
-    def fitNscoreClassifier(self, col2fit, maxdepth=8, nestimators=40):
+
+    def __get_roc_curve(self, target_test, target_predicted_proba):
+        """
+        Returns a figure with roc curve
+        """
+        fpr, tpr, thresholds = roc_curve(target_test, target_predicted_proba[:,1])
+        roc_auc = auc(fpr, tpr)  ## Area under the curve
+        fig_roc = plt.figure()
+        plt.plot(fpr, tpr, label='ROC curve (area = %0.3f)'%roc_auc)
+        plt.plot([0,1], [0,1], 'k--') # random prediction curve
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.0])
+        plt.xlabel('False Positive Rate or (1 - Specifity)')
+        plt.ylabel('True Positive Rate or (sensitivity)')
+        plt.title('Receiver Operating Characteristic')
+        plt.legend(loc="lower right")
+        plt.grid()
+        return {'fig' : fig_roc, 'auc' : roc_auc}
+
+
+    def fitNscoreClassifier(self, col2fit, maxdepth=8, nestimators=40, **kwargs):
         """
         Fit on one fraction of the data and score on the rest
+
+        Kwargs:
+        showNwaite (bool): show the plots and waits for the user to press enter when finished
+         default:True
+
         """
 
         if not self.iscleaned:
             print 'Preparing the data...'
             self.prepare_data(self.df_full, True, col2fit)
 
-        ## number of rows used for the fit
-        nrows = self.df_full.shape[0]
-        nfit = int(0.7*nrows)
-        nscore = nrows - nfit
-        print '\nTraining will be performed with {} rows and scored on {} rows\n'.format(nfit, nscore)
+        test_size = 0.3## fraction kept for testing
+        rnd_seed = 0## for reproducibility
+
+        features_train, features_test, target_train, target_test = train_test_split(
+            self.df_full[col2fit].values, self.df_full['rain'].values,
+            test_size=test_size, random_state=rnd_seed)
+
+        print '\nFitting with max_depth={} and n_estimators={}...'.format(maxdepth, nestimators)
+        self.rainClassifier = RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth)
+        self.rainClassifier.fit(features_train, target_train)
+
+        print 'Done!\n\nFeatures importances'
+        ordered_feature, ordered_importance = [], []
+        ord_idx = N.argsort(self.rainClassifier.feature_importances_)#Feature index ordered by importance
+        for ifeaturindex in ord_idx[::-1]:
+            print '{0} \t: {1}'.format(col2fit[ifeaturindex], round(self.rainClassifier.feature_importances_[ifeaturindex], 2))
+            ordered_feature.append(col2fit[ifeaturindex])
+            ordered_importance.append(self.rainClassifier.feature_importances_[ifeaturindex])
 
 
-        ## Fit rain-norain
-        rfmodel.fitClassifier(col2fit, maxdepth, nestimators, nfit)
+        ## Number of cpu to use
+        ## Making sure there is one free unless there is only one
+        njobs = max(1, int(0.75*multiprocessing.cpu_count()))
+        print '\n\nValidating with njobs = {}\n...\n'.format(njobs)
 
-        ## Cross validate on independant samples
-        values2val = self.df_full[nfit:][col2fit].values
-        target2val = self.df_full[nfit:]['rain'].values
 
-        print 'Cross validating on {} rows'.format(values2val.shape[0])
-        
-        scores = cross_validation.cross_val_score(self.rainClassifier, values2val, target2val, cv=10)
+        print 'Cross validating on {} rows with njobs={}...'.format(target_test.shape[0], njobs)
+
+        scores = cross_validation.cross_val_score(self.rainClassifier, features_test,
+                                                  target_test, cv=10, n_jobs=njobs)
         print scores
-        print '\n\nCross validation accuracy: %.2f (+/- %.3f)\n' % (round(scores.mean(), 2), round(scores.std() / 2, 3))
+        print '\n\nCross validation accuracy: %.2f (+/- %.3f)\n' % (round(scores.mean(), 3), round(scores.std() / 2, 3))
+
+        ## Importances
+        ordered_feature.reverse()
+        ordered_importance.reverse()
+        fig_importance = plt.figure(figsize = [6,9])
+        y_pos = N.arange(len(ordered_feature))
+        plt.barh(y_pos, ordered_importance, align='center', alpha=0.4)
+        plt.yticks(y_pos, ordered_feature)
+        plt.xlabel('Importance')
+        #plt.tight_layout()
+        plt.subplots_adjust(left=0.35, top=0.95)
+        plt.grid()
+
+        ## Probability distribution
+        ## Only the max probability is shown (using N.amax(target_predicted_proba, 1))
+        ## because the other probability is 1-FirstProb
+        target_predicted_proba = self.rainClassifier.predict_proba(features_test)
+        fig_prob = plt.figure()
+        plt.hist(N.amax(target_predicted_proba, 1), normed=True, bins = 50)
+        plt.xlabel('Prediction probability')
+        plt.yscale('log', nonposy='clip')
+        plt.grid()
+
+
+        ## ROC curve
+        fig_roc = plt.figure()
+        roc_dic = self.__get_roc_curve(target_test, target_predicted_proba)
+
+        waitNshow = True
+        if kwargs.has_key('waitNshow'):
+            waitNshow = kwargs['waitNshow']
+        if waitNshow:
+            fig_importance.show()
+            fig_prob.show()
+            roc_dic['fig'].show()
+            raw_input('press enter when finished')
+        out_dic =  {'fig_importance': fig_importance, 'fig_prob':fig_prob, 'fig_roc':roc_dic['fig']}
+        out_dic['features_importances'] = self.rainClassifier.feature_importances_
+        out_dic['scores_mean'] = scores.mean()
+        out_dic['scores_std'] = scores.std()
+        out_dic['roc_auc'] = roc_dic['auc']
+        return out_dic
 
     def fitNscoreRegressor(self, col2fit, maxdepth=8, nestimators=40):
         """
@@ -376,12 +462,12 @@ class RandomForestModel(object):
         """
         Fit the classifier and regressor
         Calculate the score of using both
-        Note: Eventually there could/should be different column to fit for the classifier and Regressor 
+        Note: Eventually there could/should be different column to fit for the classifier and Regressor
         """
         ##Fit parameters
         clf_maxdepth, clf_nestimators = 18, 250
         reg_maxdepth, reg_nestimators = 13, 250
-        
+
         combined_col = clf_col2fit + list(set(reg_col2fit) - set(clf_col2fit))
         if not self.iscleaned:
             print 'Preparing the data...'
@@ -443,7 +529,7 @@ class RandomForestModel(object):
         print '\nGetting and cleaning all test data...'
         df_test = pd.read_csv('Data/test_2014.csv')
         #df_test = pd.read_csv('Data/test_2014.csv', nrows=2000)## For testing
-        
+
         list_id = df_test['Id'].values
         self.prepare_data(df_test, True, combined_col)
 
@@ -473,7 +559,8 @@ class RandomForestModel(object):
 
 
 if __name__=='__main__':
-    #rfmodel = RandomForestModel(saved_df = 'saved_df/test.h5')
+    #rfmodel = RandomForestModel(saved_df = 'saved_df/test30k.h5')
+    #rfmodel = RandomForestModel(saved_df = 'saved_df/test200k.h5')
     rfmodel = RandomForestModel('Data/train_2013.csv', 700000)
     #rfmodel = RandomForestModel('Data/train_2013.csv', 'all')
     #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval', 'Avg_RR1', 'Range_RR1', 'Avg_RR2', 'Range_RR2']
@@ -504,3 +591,4 @@ if __name__=='__main__':
     rfmodel.prepare_and_save_df(coltofit, 'saved_df/test700k.h5')
     #rfmodel.fitNscoreAll(clf_coltofit, reg_coltofit)
     #rfmodel.submit(clf_coltofit, reg_coltofit)
+    #rfmodel.fitNscoreClassifier(clf_coltofit,18, 300)

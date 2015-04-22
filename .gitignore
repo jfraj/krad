@@ -1,6 +1,9 @@
 *.csv
 *.pyc
 *.txt
+*.png
+*.pdf
+*.h5
 sample_solution.py
 .ipynb_checkpoints
 .DS_Store
