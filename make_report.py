@@ -3,7 +3,8 @@ from rf2steps import RandomForestModel
 import rflearning
 import numpy as N
 
-def make_clf_grid_report(classifier, col2fit, rep_label = 'test'):
+
+def make_clf_grid_report(classifier, col2fit, rep_label='test'):
     """
     Creates a report of the hyperparameter search
     """
@@ -12,22 +13,22 @@ def make_clf_grid_report(classifier, col2fit, rep_label = 'test'):
     #max_depths = [8,20,30]
     #nestimators = [10, 20, 30]
 
-    
+
     ## Report info
     report_dir = os.path.join('reports/',rep_label)
     if not os.path.exists(report_dir):
         print 'creating report directory: %s'%report_dir
         os.mkdir(report_dir)
     reportname = os.path.join(report_dir, 'clf_grid_report.txt')
-    
+
     if os.path.exists(reportname):
         if raw_input('Report with this name already exists...\
             overwrite?(y/n)') not in ('y', 'Y', 'Yes', 'YES', 'yes'):
             print '\n\nAborting!\n\n'
             sys.exit(1)
-    
+
     print 'making classifier grid report with {}'.format(classifier)
-    
+
     ## Writing the paramenters to the report
     frep = open(reportname, 'w')
     frep.write('\ndf_file=%s\n'%classifier)
@@ -35,10 +36,10 @@ def make_clf_grid_report(classifier, col2fit, rep_label = 'test'):
     frep.write('\nmax_depths=\n%s\n'%str(max_depths))
     frep.write('\nn_estimators=\n%s\n'%str(nestimators))
 
-    
+
     lrn = rflearning.clf_learning(saved_df=classifier)
     report_dic = lrn.grid_search(col2fit, waitNshow=False, nestimators=nestimators, max_depths=max_depths)
-    
+
     frep.write('\ngrid score =\n%s\n'%str(report_dic['grid_score']))
 
     ## Save figures
@@ -46,12 +47,12 @@ def make_clf_grid_report(classifier, col2fit, rep_label = 'test'):
     report_dic['fig_grid'].savefig(os.path.join(report_dir, 'clf_fig_gridsearch.%s'%save_type))
     report_dic['fig_mdepth'].savefig(os.path.join(report_dir, 'clf_fig_maxdepth.%s'%save_type))
     report_dic['fig_nestim'].savefig(os.path.join(report_dir, 'clf_fig_nestim.%s'%save_type))
-    
+
     frep.close()
     print '\nFinished writing report file:\n%s'%reportname
 
 
-    
+
 def make_clf_score_report(classifier, col2fit, rep_label = 'test'):
     """
     Creates a report about the classifier
@@ -76,12 +77,12 @@ def make_clf_score_report(classifier, col2fit, rep_label = 'test'):
     #nestimators = 30
 
     print 'making classifier score report with {}'.format(classifier)
-    
+
     ## Writing the paramenters to the report
     frep = open(reportname, 'w')
     frep.write('\ndf_file=%s\n'%classifier)
     frep.write('\ncolumns=%s\n'%str(col2fit))
-    
+
     #rfmodel = RandomForestModel('Data/train_2013.csv', 1000)## For testing
     #rfmodel = RandomForestModel(saved_df = classifier)
     rfmodel = rflearning.clf_learning(saved_df = classifier)
@@ -99,7 +100,7 @@ def make_clf_score_report(classifier, col2fit, rep_label = 'test'):
     frep.write('\n train learning scores: %s\n'%str(learn_dic['train_scores']))
     frep.write('\n test learning scores: %s\n'%str(learn_dic['test_scores']))
 
-    
+
     frep.write('\n\n\n\n'+100*'-' + '\n End of report\n')
 
     ## Save figures
@@ -123,6 +124,6 @@ if __name__=="__main__":
                 'Avg_MassWeightedSD', 'Range_MassWeightedSD', 'Avg_RhoHV', 'Range_RhoHV'
                 ]
 
-    make_clf_score_report('saved_df/test30k.h5', coltofit, 'test30k')
-    #make_clf_score_report('saved_df/test700k.h5', coltofit, 'test700k')
+    #make_clf_score_report('saved_df/test30k.h5', coltofit, 'test30k')
+    make_clf_score_report('saved_df/test700k.h5', coltofit, 'test700k')
     #make_clf_grid_report('saved_df/test30k.h5', coltofit, 'test30k')
