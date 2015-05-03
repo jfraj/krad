@@ -70,6 +70,7 @@ class BaseModel(object):
                 clean.getIthRadar, axis=1)
             df['Avg_Reflectivity'],  df['Range_Reflectivity'], df['Nval']=\
               zip(*df['Reflectivity1'].apply(clean.getListReductions))
+            df.drop('Reflectivity1', axis=1, inplace=True)
 
         # Zdr
         if var2prep == 'all' or any("Zdr" in s for s in var2prep):
@@ -83,6 +84,7 @@ class BaseModel(object):
             ## (elements in the list with error code (<=-99000) will make the average negative)
             df.loc[df.Avg_Zdr < 0, 'Avg_Zdr'] = 0.0
             df.loc[df.Range_Zdr > 1000, 'Range_Zdr'] = 0.0
+            df.drop('Zdr1', axis=1, inplace=True)
 
         # Composite
         if var2prep == 'all' or any("Composite" in s for s in var2prep):
@@ -96,6 +98,7 @@ class BaseModel(object):
             ## (elements in the list with error code (<=-99000) will make the average negative)
             df.loc[df.Avg_Composite < 0, 'Avg_Composite'] = 0.0
             df.loc[df.Range_Composite > 1000, 'Range_Composite'] = 0.0
+            df.drop('Composite1', axis=1, inplace=True)
 
         # HybridScan
         if var2prep == 'all' or any("HybridScan" in s for s in var2prep):
@@ -109,6 +112,7 @@ class BaseModel(object):
             ## (elements in the list with error code (<=-99000) will make the average negative)
             df.loc[df.Avg_HybridScan < 0, 'Avg_HybridScan'] = 0.0
             df.loc[df.Range_HybridScan > 1000, 'Range_HybridScan'] = 0.0
+            df.drop('HybridScan1', axis=1, inplace=True)
 
         # Velocity
         if var2prep == 'all' or any("Velocity" in s for s in var2prep):
@@ -122,6 +126,7 @@ class BaseModel(object):
             ## (elements in the list with error code (<=-99000) will make the average negative)
             df.loc[df.Avg_Velocity < 0, 'Avg_Velocity'] = 0.0
             df.loc[df.Range_Velocity > 1000, 'Range_Velocity'] = 0.0
+            df.drop('Velocity1', axis=1, inplace=True)
 
         # LogWaterVolume
         if var2prep == 'all' or any("LogWaterVolume" in s for s in var2prep):
@@ -133,6 +138,7 @@ class BaseModel(object):
             df.drop('Nval_LogWaterVolume', axis=1, inplace=True)# Already in Nval
             df['Avg_LogWaterVolume'].fillna(0, inplace=True)
             df['Range_LogWaterVolume'].fillna(0, inplace=True)
+            df.drop('LogWaterVolume1', axis=1, inplace=True)
 
         # MassWeightedMean
         if var2prep == 'all' or any("MassWeightedMean" in s for s in var2prep):
@@ -144,6 +150,7 @@ class BaseModel(object):
             df.drop('Nval_MassWeightedMean', axis=1, inplace=True)# Already in Nval
             df['Avg_MassWeightedMean'].fillna(0, inplace=True)
             df['Range_MassWeightedMean'].fillna(0, inplace=True)
+            df.drop('MassWeightedMean1', axis=1, inplace=True)
 
         # MassWeightedSD
         if var2prep == 'all' or any("MassWeightedSD" in s for s in var2prep):
@@ -155,6 +162,7 @@ class BaseModel(object):
             df.drop('Nval_MassWeightedSD', axis=1, inplace=True)# Already in Nval
             df['Avg_MassWeightedSD'].fillna(0, inplace=True)
             df['Range_MassWeightedSD'].fillna(0, inplace=True)
+            df.drop('MassWeightedSD1', axis=1, inplace=True)
 
         # RhoHV
         if var2prep == 'all' or any("RhoHV" in s for s in var2prep):
@@ -164,8 +172,7 @@ class BaseModel(object):
             df['Avg_RhoHV'],  df['Range_RhoHV'], df['Nval_RhoHV']=\
               zip(*df['RhoHV1'].apply(clean.getListReductions))
             df.drop('Nval_RhoHV', axis=1, inplace=True)# Already in Nval
-            #df['Avg_RhoHV'].fillna(0, inplace=True)
-            #df['Range_RhoHV'].fillna(0, inplace=True)
+            df.drop('RhoHV1', axis=1, inplace=True)
 
 
         # Distance to radar
@@ -177,6 +184,7 @@ class BaseModel(object):
               zip(*df['DistanceToRadar1'].apply(clean.getListReductions))
             ## Remove the Nval_xxx it's already in the Nval column
             df.drop('Nval_DistanceToRadar', axis=1, inplace=True)
+            df.drop('DistanceToRadar1', axis=1, inplace=True)
 
         # Radar quality index
         if var2prep == 'all' or any("RadarQualityIndex" in s for s in var2prep):
@@ -192,6 +200,7 @@ class BaseModel(object):
             df.loc[df.Avg_RadarQualityIndex > 1, 'Avg_RadarQualityIndex'] = 0.5
             ## Set All the < 0 (something wrong with measurement) as 0 i.e. bad data
             df.loc[df.Avg_RadarQualityIndex < 0, 'Avg_RadarQualityIndex'] = 0.0
+            df.drop('RadarQualityIndex1', axis=1, inplace=True)
 
         # RR1
         if var2prep == 'all' or any("RR1" in s for s in var2prep):
@@ -204,6 +213,7 @@ class BaseModel(object):
             ## Set negative RR1 (could not be computed) to 0.0 i.e. no rain
             ## (elements in the list with error code (<=-99000) will make the average negative)
             df.loc[df.Avg_RR1 < 1, 'Avg_RR1'] = 0.0
+            df.drop('RR11', axis=1, inplace=True)
 
         # RR2
         if var2prep == 'all' or any("RR2" in s for s in var2prep):
@@ -216,6 +226,7 @@ class BaseModel(object):
             ## Set negative RR2 (could not be computed) to 0.0 i.e. no rain
             ## (elements in the list with error code (<=-99000) will make the average negative)
             df.loc[df.Avg_RR2 < 1, 'Avg_RR2'] = 0.0
+            df.drop('RR21', axis=1, inplace=True)
 
         # RR3
         if var2prep == 'all' or any("RR3" in s for s in var2prep):
@@ -225,6 +236,7 @@ class BaseModel(object):
             df['Avg_RR3'],  df['Range_RR3'], df['Nval_RR3']=\
               zip(*df['RR31'].apply(clean.getListReductions))
             df.drop('Nval_RR3', axis=1, inplace=True)# Already in Nval
+            df.drop('RR31', axis=1, inplace=True)
 
             ## Set negative RR3 (could not be computed) to 0.0 i.e. no rain
             ## (elements in the list with error code (<=-99000) will make the average negative)
