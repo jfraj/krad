@@ -27,7 +27,7 @@ def getRadarLength(TimeToEnd):
 
 def separate_listInColumn(x):
     """
-    Returns a tuple where all the measurements are separeted by radar 
+    Returns a tuple where all the measurements are separeted by radar
     Input:
         x : should be a panda Dataframe
                 - First column must be the tuble of radar length
@@ -118,12 +118,12 @@ def get_dataframe_with_split_multiple_radars(input_df):
     columns_to_split.remove('Id')       # not a time series!
     columns_to_split.remove('Expected') # not a time series!
 
-    # Create an array of all the column names, in the same order as in the 
+    # Create an array of all the column names, in the same order as in the
     # original data.
     right_column_order = ['unique_Id']
     for col in input_df.columns:
         right_column_order.append(col)
-             
+
     # Append a new column that will represent how many radars were in the set from
     # which a given row came from.
     right_column_order.append('number_of_radars')
@@ -132,7 +132,7 @@ def get_dataframe_with_split_multiple_radars(input_df):
     # as we go along.
 
     # note about the algorithm below:
-    #   It seems pretty ugly to loop on an index (not very pythonic). 
+    #   It seems pretty ugly to loop on an index (not very pythonic).
     #   However, since I don't know ahead of time how many rows I'll have,
     #   a stackoverflow comment suggests that creating a list of dictionaries is faster.
     #   See: http://stackoverflow.com/questions/10715965/add-one-row-in-a-pandas-dataframe
@@ -144,19 +144,19 @@ def get_dataframe_with_split_multiple_radars(input_df):
     id_counter = -1  # unique identifier for our split radar entries
 
     num_lines = len(input_df)
-    for index in range(num_lines):    
+    for index in range(num_lines):
 
         if index%100 == 0:
             print 'doing row %i of %i ...'%(index,num_lines)
 
         # create a copy of the row, so we can manipulate
-        # it without polluting the initial dataframe. 
+        # it without polluting the initial dataframe.
         row = input_df.loc[index].copy()
 
         ID       = row['Id']
         expected = row['Expected']
 
-        # don't want to pollute input dataframe! We're 
+        # don't want to pollute input dataframe! We're
         # hacking the copy here.
         row['RadarCounts'] = getRadarLength(row['TimeToEnd'])
         number_of_radars   = len(row['RadarCounts'])
@@ -164,19 +164,19 @@ def get_dataframe_with_split_multiple_radars(input_df):
         # list of dictionaries spawned by this row
         list_newrows_dict = []
 
-        # initialize all relevant dictionaries with 
-        # "family" data, ie stuff that is the same for all radars in row. 
+        # initialize all relevant dictionaries with
+        # "family" data, ie stuff that is the same for all radars in row.
         for i in row['RadarCounts']:
             id_counter += 1
             list_newrows_dict.append({        'unique_Id':id_counter,
-                                                     'Id':ID, 
-                                       'number_of_radars':number_of_radars, 
+                                                     'Id':ID,
+                                       'number_of_radars':number_of_radars,
                                                'Expected':expected          })
 
         # populate the new dictionaries just created above with every column data
         for col in columns_to_split:
 
-            # get subrow so we can apply splitting methods            
+            # get subrow so we can apply splitting methods
             subrow = row[['RadarCounts',col]]
 
             # fill the dictionaries with the split data
@@ -184,13 +184,13 @@ def get_dataframe_with_split_multiple_radars(input_df):
                 dict[col] = N.array(array)
 
 
-        # extend the main list of dictionaries with the entries from this row        
+        # extend the main list of dictionaries with the entries from this row
         list_new_dataframe_dict.extend( list_newrows_dict )
 
     # create the new dataframe from the list of dictionaries
     output_df = pd.DataFrame(list_new_dataframe_dict)[right_column_order].set_index('unique_Id')
 
-    return output_df 
+    return output_df
 
 
 def get_clean_array(array):
@@ -201,15 +201,15 @@ def get_clean_array(array):
     error_codes = [ -99900.0, -99901.0, -99903.0, 999.0]
 
     # take out the NaN
-    float_array = array[ N.where(N.isfinite(array)) ] 
+    float_array = array[ N.where(N.isfinite(array)) ]
 
     I = N.ones_like(float_array)
-    for code in error_codes: 
+    for code in error_codes:
         I *= float_array != code
 
-    left_over_array = float_array[ N.where(I) ] 
+    left_over_array = float_array[ N.where(I) ]
 
-    return left_over_array 
+    return left_over_array
 
 
 def get_clean_average(array):
@@ -269,9 +269,9 @@ def get_clean_average_and_range_dataframe(input_df):
             print '   - There are %i finite averages'%len(I_finite)
 
             finite_average = N.average(avg[I_finite])
-            avg[I_nan]     = finite_average 
+            avg[I_nan]     = finite_average
 
-            #print c, I_nan.shape, finite_average 
+            #print c, I_nan.shape, finite_average
         dict_averages['avg_%s'%col] = avg
 
         print 'Computing range for column %s ...'%col
@@ -288,7 +288,7 @@ def get_clean_average_and_range_dataframe(input_df):
             finite_range = N.average(rng[I_finite])
             rng[I_nan]   = finite_range
 
-            #print c, I_nan.shape, finite_average 
+            #print c, I_nan.shape, finite_average
         dict_averages['range_%s'%col] = rng
 
 
@@ -296,30 +296,10 @@ def get_clean_average_and_range_dataframe(input_df):
     # create the new dataframe from the list of dictionaries
     output_df = pd.DataFrame(dict_averages)
 
-    return output_df 
+    return output_df
 
 
-    
-if __name__ == "__main__":
-    #print getRadarLength([5,4,3,2,1])
-    #print getRadarLength([5,4,3,7,1])
 
-    ##The following lines show how to create a new column with the length of each radar
-    import pandas as pd
-    data = {"a": ["5 4 3 2 1", "5 4 3 7 1", "6 7 7", "3 5 6 1", "1 2 3 4 5 6 7 8"], "b" :  [(3,2), (2,3), (1,2), (2,2), (2,3,2)]}
-    df = pd.DataFrame(data)
-    print df
-    #df['z'] = df['a'].apply(getRadarLength)
-    #print df[[1,0]].apply(separate_listInColumn, axis=1)
-    #df['z'] = df[[1,0]].apply(separate_listInColumn, axis=1)
-    #print df[['b','a']].apply(separate_listInColumn, axis=1)
-    #df['r1'], df['r2'] = zip(*df[['b','a']].apply(separate_listInColumn, axis=1))
-    #print '\n\n\n'
-    #print df
-    df['a1'] =  df[['b','a']].apply(getIthRadar, axis=1)
-    print list(df['a1'])
-    #print zip(*df['a'].apply(getListReductions))
-    
 if __name__ == "__main__":
     #print getRadarLength([5,4,3,2,1])
     #print getRadarLength([5,4,3,7,1])

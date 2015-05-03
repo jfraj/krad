@@ -59,10 +59,10 @@ class BaseModel(object):
         if 'Expected' in df.columns.values:
             df['rain'] = df['Expected'].apply(lambda x: 1 if x>0 else 0)
 
-        #######
-        ## Adding the mean of variables to fit
+        # #####
+        # Adding the mean of variables to fit
 
-        ## Reflectivity
+        # Reflectivity
         if var2prep == 'all' or any("Reflectivity" in s for s in var2prep):
             if verbose:
                 print 'Clean reflectivity'
@@ -71,7 +71,7 @@ class BaseModel(object):
             df['Avg_Reflectivity'],  df['Range_Reflectivity'], df['Nval']=\
               zip(*df['Reflectivity1'].apply(clean.getListReductions))
 
-        ##Zdr
+        # Zdr
         if var2prep == 'all' or any("Zdr" in s for s in var2prep):
             if verbose:
                 print 'Clean Zdr'
@@ -84,7 +84,7 @@ class BaseModel(object):
             df.loc[df.Avg_Zdr < 0, 'Avg_Zdr'] = 0.0
             df.loc[df.Range_Zdr > 1000, 'Range_Zdr'] = 0.0
 
-        ##Composite
+        # Composite
         if var2prep == 'all' or any("Composite" in s for s in var2prep):
             if verbose:
                 print 'Clean Composite'
@@ -97,7 +97,7 @@ class BaseModel(object):
             df.loc[df.Avg_Composite < 0, 'Avg_Composite'] = 0.0
             df.loc[df.Range_Composite > 1000, 'Range_Composite'] = 0.0
 
-        ##HybridScan
+        # HybridScan
         if var2prep == 'all' or any("HybridScan" in s for s in var2prep):
             if verbose:
                 print 'Clean HybridScan'
@@ -110,7 +110,7 @@ class BaseModel(object):
             df.loc[df.Avg_HybridScan < 0, 'Avg_HybridScan'] = 0.0
             df.loc[df.Range_HybridScan > 1000, 'Range_HybridScan'] = 0.0
 
-        ##Velocity
+        # Velocity
         if var2prep == 'all' or any("Velocity" in s for s in var2prep):
             if verbose:
                 print 'Clean Velocity'
@@ -123,7 +123,7 @@ class BaseModel(object):
             df.loc[df.Avg_Velocity < 0, 'Avg_Velocity'] = 0.0
             df.loc[df.Range_Velocity > 1000, 'Range_Velocity'] = 0.0
 
-        ##LogWaterVolume
+        # LogWaterVolume
         if var2prep == 'all' or any("LogWaterVolume" in s for s in var2prep):
             if verbose:
                 print 'Clean LogWaterVolume'
@@ -134,7 +134,7 @@ class BaseModel(object):
             df['Avg_LogWaterVolume'].fillna(0, inplace=True)
             df['Range_LogWaterVolume'].fillna(0, inplace=True)
 
-        ##MassWeightedMean
+        # MassWeightedMean
         if var2prep == 'all' or any("MassWeightedMean" in s for s in var2prep):
             if verbose:
                 print 'Clean MassWeightedMean'
@@ -145,7 +145,7 @@ class BaseModel(object):
             df['Avg_MassWeightedMean'].fillna(0, inplace=True)
             df['Range_MassWeightedMean'].fillna(0, inplace=True)
 
-        ##MassWeightedSD
+        # MassWeightedSD
         if var2prep == 'all' or any("MassWeightedSD" in s for s in var2prep):
             if verbose:
                 print 'Clean MassWeightedSD'
@@ -156,7 +156,7 @@ class BaseModel(object):
             df['Avg_MassWeightedSD'].fillna(0, inplace=True)
             df['Range_MassWeightedSD'].fillna(0, inplace=True)
 
-        ##RhoHV
+        # RhoHV
         if var2prep == 'all' or any("RhoHV" in s for s in var2prep):
             if verbose:
                 print 'Clean RhoHV'
@@ -168,7 +168,7 @@ class BaseModel(object):
             #df['Range_RhoHV'].fillna(0, inplace=True)
 
 
-        ## Distance to radar
+        # Distance to radar
         if var2prep == 'all' or any("DistanceToRadar" in s for s in var2prep):
             if verbose:
                 print 'Clean DistanceToRadar'
@@ -178,7 +178,7 @@ class BaseModel(object):
             ## Remove the Nval_xxx it's already in the Nval column
             df.drop('Nval_DistanceToRadar', axis=1, inplace=True)
 
-        ## Radar quality index
+        # Radar quality index
         if var2prep == 'all' or any("RadarQualityIndex" in s for s in var2prep):
             if verbose:
                 print 'Clean RadarQualityIndex'
@@ -193,7 +193,7 @@ class BaseModel(object):
             ## Set All the < 0 (something wrong with measurement) as 0 i.e. bad data
             df.loc[df.Avg_RadarQualityIndex < 0, 'Avg_RadarQualityIndex'] = 0.0
 
-        ##RR1
+        # RR1
         if var2prep == 'all' or any("RR1" in s for s in var2prep):
             if verbose:
                 print 'Clean RR1'
@@ -205,7 +205,7 @@ class BaseModel(object):
             ## (elements in the list with error code (<=-99000) will make the average negative)
             df.loc[df.Avg_RR1 < 1, 'Avg_RR1'] = 0.0
 
-        ##RR2
+        # RR2
         if var2prep == 'all' or any("RR2" in s for s in var2prep):
             if verbose:
                 print 'Clean RR2'
@@ -217,7 +217,7 @@ class BaseModel(object):
             ## (elements in the list with error code (<=-99000) will make the average negative)
             df.loc[df.Avg_RR2 < 1, 'Avg_RR2'] = 0.0
 
-        ##RR3
+        # RR3
         if var2prep == 'all' or any("RR3" in s for s in var2prep):
             if verbose:
                 print 'Clean RR3'
@@ -225,8 +225,32 @@ class BaseModel(object):
             df['Avg_RR3'],  df['Range_RR3'], df['Nval_RR3']=\
               zip(*df['RR31'].apply(clean.getListReductions))
             df.drop('Nval_RR3', axis=1, inplace=True)# Already in Nval
+
             ## Set negative RR3 (could not be computed) to 0.0 i.e. no rain
             ## (elements in the list with error code (<=-99000) will make the average negative)
             df.loc[df.Avg_RR3 < 1, 'Avg_RR3'] = 0.0
+
+        # HydrometeorType
+        # Hydrometers are categories so we create variables for each one
+        # The column contains how many times the type occurs
+        # This could be scaled by nval to keep the value with [0,1]
+        # but since nval is also a feature, I let the learner deal with it
+        if var2prep == 'all' or any("hm_" in s for s in var2prep):
+            if verbose:
+                print 'Clean HydrometeorType'
+            df['HyMeType1'] = df[['RadarCounts','HydrometeorType']].apply(clean.getIthRadar, axis=1)
+            for itype in range(15):
+                df['hm_{}'.format(itype)] = df.HyMeType1.apply(lambda x: x.count(itype))
+            # Some values have the same meaning let's add them
+            df['hm_0'] = df['hm_0'] + df['hm_9']
+            df.drop('hm_9', axis=1, inplace=True)
+
+            df['hm_1'] = df['hm_1'] + df['hm_2']
+            df.drop('hm_2', axis=1, inplace=True)
+
+            df['hm_13'] = df['hm_13'] + df['hm_14']
+            df.drop('hm_14', axis=1, inplace=True)
+
+            df.drop('HyMeType1', axis=1, inplace=True)
 
         self.iscleaned = True

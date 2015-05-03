@@ -89,8 +89,8 @@ class RandomForestClf(BaseModel):
     def fitNscore(self, col2fit, **kwargs):
         """Produce fit and score for the given parameters."""
         # parameters
-        nestimators = kwargs.get('nestimator', 40)
-        maxdepth = kwargs.get('maxdepth', 15)
+        nestimators = kwargs.get('nestimator', 100)
+        maxdepth = kwargs.get('maxdepth', 20)
 
         # cleaning
         if not self.iscleaned:
@@ -117,8 +117,8 @@ class RandomForestClf(BaseModel):
             test_size=test_size, random_state=rnd_seed)
 
         print('\nFitting with max_depth={} and n_estimators={}...'.format(maxdepth, nestimators))
-        #self.rainClassifier = RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth)
-        self.rainClassifier = RandomForestRegressor(n_estimators=nestimators, max_depth=maxdepth)
+        self.rainClassifier = RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth)
+        #self.rainClassifier = RandomForestRegressor(n_estimators=nestimators, max_depth=maxdepth)
         self.rainClassifier.fit(features_train, target_train)
 
         # Predict on the rest of the sample
@@ -131,6 +131,11 @@ class RandomForestClf(BaseModel):
         score_pois = kaggle_metric(N.round(predictions), target_test, 'poisson')
         print '\n\nScore(heaviside)={}'.format(score)
         print '\nScore(poisson)={}\n\n'.format(score_pois)
+
+        ord_idx = N.argsort(self.rainClassifier.feature_importances_)#Feature index ordered by importance
+        for ifeaturindex in ord_idx[::-1]:
+            print '{0} \t: {1}'.format(col2fit[ifeaturindex], round(self.rainClassifier.feature_importances_[ifeaturindex], 2))
+
 
         # Plots
         # confusion matrix
@@ -147,13 +152,10 @@ class RandomForestClf(BaseModel):
         fig_cm.colorbar(im_cm)
         fig_cm.show()
 
-        print self.df_full['rain'].head()
-        print zip(target_test[:5],predictions[:5])
-
         raw_input('press enter when finished...')
 
 if __name__ == "__main__":
-    a = RandomForestClf('Data/train_2013.csv', 500000)
+    a = RandomForestClf('Data/train_2013.csv', 5000)
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex',
                 'Range_RadarQualityIndex',
@@ -164,7 +166,13 @@ if __name__ == "__main__":
                 'Avg_LogWaterVolume', 'Range_LogWaterVolume',
                 'Avg_MassWeightedMean', 'Range_MassWeightedMean',
                 'Avg_MassWeightedSD', 'Range_MassWeightedSD',
-                'Avg_RhoHV', 'Range_RhoHV'
+                'Avg_RhoHV', 'Range_RhoHV',
                 ]
+    # Adding hydrometeor types
+    # Some are merged because they have the same meaning
+    hm_types = [0, 1, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13]
+    coltofit.extend(["hm_{}".format(i) for i in hm_types])
+
+    print coltofit
     #a.cvscore(coltofit)
     a.fitNscore(coltofit)
