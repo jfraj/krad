@@ -89,7 +89,7 @@ class RandomForestClf(BaseModel):
     def fitNscore(self, col2fit, **kwargs):
         """Produce fit and score for the given parameters."""
         # parameters
-        nestimators = kwargs.get('nestimator', 100)
+        nestimators = kwargs.get('nestimator', 250)
         maxdepth = kwargs.get('maxdepth', 20)
 
         # cleaning
@@ -136,8 +136,32 @@ class RandomForestClf(BaseModel):
         for ifeaturindex in ord_idx[::-1]:
             print '{0} \t: {1}'.format(col2fit[ifeaturindex], round(self.rainClassifier.feature_importances_[ifeaturindex], 2))
 
-
         # Plots
+
+        # Feature importances
+        importances = self.rainClassifier.feature_importances_
+        std = N.std([tree.feature_importances_ for tree in self.rainClassifier.estimators_],
+             axis=0)
+        indices = N.argsort(importances)[::-1]
+        ordered_names = [ col2fit[i] for i in indices]
+        print("Feature ranking:")
+
+        for f in range(len(indices)):
+            print("%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]]))
+
+        fig_import = plt.figure(figsize=(10, 10))
+        plt.title("Feature importances, md={} ne={}".format(maxdepth, nestimators))
+        #plt.bar(range(len(indices)), importances[indices],
+        #        color="r", yerr=std[indices], align="center")
+        plt.barh(range(len(indices)), importances[indices],
+                color="b", xerr=std[indices], align="center",ecolor='r')
+        plt.yticks(range(len(indices)), ordered_names)
+        plt.ylim([-1, len(indices)])
+        plt.ylim(plt.ylim()[::-1])
+        plt.subplots_adjust(left=0.22)
+        fig_import.show()
+
+
         # confusion matrix
         cm = confusion_matrix(target_test.astype(int), predictions.astype(int))
         cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, N.newaxis]
@@ -155,7 +179,7 @@ class RandomForestClf(BaseModel):
         raw_input('press enter when finished...')
 
 if __name__ == "__main__":
-    a = RandomForestClf('Data/train_2013.csv', 5000)
+    a = RandomForestClf('Data/train_2013.csv', 700000)
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex',
                 'Range_RadarQualityIndex',
