@@ -1,7 +1,7 @@
 """
 Generating the submission file, given the predicted data.
 
-The methods are inspired by the sample_solution.py script 
+The methods are inspired by the sample_solution.py script
 provided by Alex Kleeman, The Climate Corporation
 """
 import csv
@@ -20,13 +20,16 @@ logger.setLevel(logging.DEBUG)
 
 
 
-def generate_submission_file(list_id,submission_data, verbose=True):
+def generate_submission_file(list_id,submission_data, verbose=True, **kwargs):
     """
     Simple script to generate the submission file.
     verbose will have the progression printed out
     """
+    open_type = kwargs.get('open_type', 'w')
+    fname = kwargs.get('fname', 'submission.csv')
     nrow = len(list_id)
-    file = open('submission.csv','w')
+    print('opening {} with option {}'.format(fname, open_type))
+    file = open('submission.csv',open_type)
     # wrap the inputs and outputs in csv interpreters
     writer = csv.writer(file, delimiter=',')
 
@@ -35,7 +38,8 @@ def generate_submission_file(list_id,submission_data, verbose=True):
     # Add the fields defining the cumulative probabilites
     solution_header.extend(['Predicted{0}'.format(t) for t in xrange(0, 70)])
     # write the header to file
-    writer.writerow(solution_header)
+    if open_type != 'a':
+        writer.writerow(solution_header)
 
     i = 0
     for id_num, row in zip(list_id,submission_data):
@@ -48,4 +52,4 @@ def generate_submission_file(list_id,submission_data, verbose=True):
         if i % 1000 == 0  and verbose:
             logger.info("Completed row %d (%d%%)" %(i, 100*i/nrow))
 
-    return                
+    return

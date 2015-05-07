@@ -21,6 +21,14 @@ class BaseModel(object):
             self.iscleaned = True
             return
 
+        if 'saved_pkl' in kwargs.keys():
+            print('Get pickled train data from {}'.format(kwargs['saved_pkl']))
+            self.df_full = pd.io.pickle.read_pickle(kwargs['saved_pkl'])
+            print('Train data frame has shape')
+            print(self.df_full.shape)
+            self.iscleaned = True
+            return
+
         if train_data_fname is None:
             print 'Data will not be created by reading csv file'
             self.df_full is None
@@ -35,14 +43,15 @@ class BaseModel(object):
             print('Training data frame has shape')
             print(self.df_full.shape)
 
-    def clean_data(self, df, verbose=False, var2prep='all'):
+    def clean_data(self, df, verbose=False, var2prep='all', **kwargs):
         """Prepare self.df_full for fitting.
 
         var2prep is a list of variables that will be needed.
         This will save time by cleaning only the needed variables
         """
-        if self.iscleaned:
-                print('Data already cleaned')
+        ignore_clean = kwargs.get('ignore_clean', False)
+        if self.iscleaned and not ignore_clean:
+                print('Data is already cleaned')
                 return
 
         if verbose:
