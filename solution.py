@@ -19,17 +19,16 @@ logger.addHandler(handler)
 logger.setLevel(logging.DEBUG)
 
 
+def generate_submission_file(list_id, submission_data, verbose=True, **kwargs):
+    """Simple script to generate the submission file.
 
-def generate_submission_file(list_id,submission_data, verbose=True, **kwargs):
-    """
-    Simple script to generate the submission file.
     verbose will have the progression printed out
     """
     open_type = kwargs.get('open_type', 'w')
     fname = kwargs.get('fname', 'submission.csv')
     nrow = len(list_id)
     print('opening {} with option {}'.format(fname, open_type))
-    file = open('submission.csv',open_type)
+    file = open(fname, open_type)
     # wrap the inputs and outputs in csv interpreters
     writer = csv.writer(file, delimiter=',')
 
