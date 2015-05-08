@@ -6,7 +6,7 @@ import clean
 
 class BaseModel(object):
     """Contain members and function for all trainers."""
-    def __init__(self, train_data_fname=None, nrows='all', **kwargs):
+    def __init__(self, train_data_fname=None, nrows=None, **kwargs):
         """Turn data in pandas dataframe."""
         verbose = kwargs.get('verbose', True)
         # Define the classifier and regressor variables
@@ -34,10 +34,14 @@ class BaseModel(object):
             self.df_full is None
             return
 
-        if nrows == 'all':
-            self.df_full = pd.read_csv(train_data_fname)
-        else:
-            self.df_full = pd.read_csv(train_data_fname, nrows=nrows)
+        skiprows = kwargs.get('skiprows', None)
+        if skiprows is not None:
+            if verbose:
+                print('Skipping {} rows'.format(skiprows))
+            skiprows = range(1, skiprows)
+
+        self.df_full = pd.read_csv(train_data_fname, nrows=nrows,
+                                   skiprows=skiprows)
 
         if verbose:
             print('Training data frame has shape')
