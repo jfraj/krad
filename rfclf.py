@@ -77,7 +77,7 @@ class RandomForestClf(BaseModel):
 
     def set_classifier(self, **kwargs):
         """Set the classifier."""
-        nestimators = kwargs.get('nestimator', 225)
+        nestimators = kwargs.get('nestimators', 225)
         maxdepth = kwargs.get('maxdepth', 19)
         class_weight = "auto"
 
@@ -106,7 +106,7 @@ class RandomForestClf(BaseModel):
     def cv_scores(self, col2fit, **kwargs):
         """Produce fit and score for the given parameters."""
         # parameters
-        nestimators = kwargs.get('nestimator', 10)
+        nestimators = kwargs.get('nestimators', 10)
         maxdepth = kwargs.get('maxdepth', 10)
         class_weight = "auto"
 
@@ -150,15 +150,15 @@ class RandomForestClf(BaseModel):
     def fitNscore(self, col2fit, **kwargs):
         """Produce fit and score for the given parameters."""
         # parameters
-        nestimators = kwargs.get('nestimator', 225)
-        maxdepth = kwargs.get('maxdepth', 19)
+        nestimators = kwargs.get('nestimators', 200)
+        maxdepth = kwargs.get('maxdepth', 26)
 
         # cleaning
         if not self.iscleaned:
             print 'Preparing the data...'
             self.prepare_data(self.df_full, True, col2fit)
 
-        test_size = 0.3  # fraction kept for testing
+        test_size = 0.25  # fraction kept for testing
         rnd_seed = 0  # for reproducibility
 
         features_train, features_test, target_train, target_test =\
@@ -214,7 +214,8 @@ class RandomForestClf(BaseModel):
 
         fig_cm = plt.figure()
         ax_cm = fig_cm.add_subplot(1,1,1)
-        im_cm = ax_cm.imshow(cm_normalized, interpolation='nearest')
+        im_cm = ax_cm.imshow(cm_normalized, interpolation='nearest',
+                             cmap=plt.cm.Blues)
         plt.title('Confusion mtx, md={} ne={}'.format(maxdepth, nestimators))
         plt.xlabel('Predicted')
         plt.ylabel('True')
@@ -236,6 +237,8 @@ class RandomForestClf(BaseModel):
 
     def submit(self, col2fit, **kwargs):
         """Create csv file for submission."""
+        csvname = kwargs.get('csvname', 'submission.csv')
+
         # Preparing training data
         if not self.iscleaned and not self.fitted:
             print('Preparing the data...')
@@ -276,7 +279,8 @@ class RandomForestClf(BaseModel):
             isub_data = N.array(map(poisson_cumul, N.round(ipredictions)))
             print('writing isubmission data...')
             solution.generate_submission_file(ilist_id, isub_data,
-                                              open_type=open_type)
+                                              open_type=open_type,
+                                              fname=csvname)
             open_type = 'a'
             last_row = irange
         #list_id = df_test[:sel_rows]['Id'].values
@@ -294,10 +298,11 @@ class RandomForestClf(BaseModel):
 
 
 if __name__ == "__main__":
-    #a = RandomForestClf('Data/train_2013.csv', 1000)
+    #a = RandomForestClf('Data/train_2013.csv', 950000)
     #a = RandomForestClf('Data/train_2013.csv', 'all')
-    #a = RandomForestClf(saved_pkl='saved_clf/train_data.pkl')
-    a = RandomForestClf(clf_pkl='saved_clf/clf_md20_ne250/clf.pkl')
+    #a = RandomForestClf(saved_pkl='saved_clf/train_data_700k.pkl')
+    a = RandomForestClf(saved_pkl='saved_clf/train_data.pkl')
+    #a = RandomForestClf(clf_pkl='saved_clf/clf_md20_ne250/clf.pkl')
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex',
                 'Range_RadarQualityIndex',
@@ -310,34 +315,42 @@ if __name__ == "__main__":
                 'Avg_MassWeightedSD', 'Range_MassWeightedSD',
                 'Avg_RhoHV', 'Range_RhoHV',
                 ]
-    coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
-                'Avg_DistanceToRadar', 'Avg_RadarQualityIndex',
-                'Range_RadarQualityIndex',
-                'Avg_RR1', 'Range_RR1', 'Range_RR2',
-                'Range_RR3', 'Avg_Zdr', 'Range_Zdr',
-                'Avg_Composite', 'Range_Composite', 'Avg_HybridScan',
-                'Range_HybridScan', 'Avg_Velocity', 'Range_Velocity',
-                'Avg_LogWaterVolume', 'Range_LogWaterVolume',
-                'Range_MassWeightedMean',
-                'Avg_MassWeightedSD', 'Range_MassWeightedSD',
-                'Avg_RhoHV', 'Range_RhoHV',
-                ]
+    #coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
+    #            'Avg_DistanceToRadar', 'Avg_RadarQualityIndex',
+    #            'Range_RadarQualityIndex',
+    #            'Avg_RR1', 'Range_RR1', 'Range_RR2',
+    #            'Range_RR3', 'Avg_Zdr', 'Range_Zdr',
+    #            'Avg_Composite', 'Range_Composite', 'Avg_HybridScan',
+    #            'Range_HybridScan', 'Avg_Velocity', 'Range_Velocity',
+    #            'Avg_LogWaterVolume', 'Range_LogWaterVolume',
+    #            'Range_MassWeightedMean',
+    #            'Avg_MassWeightedSD', 'Range_MassWeightedSD',
+    #            'Avg_RhoHV', 'Range_RhoHV',
+    #            ]
     # Adding hydrometeor types
     # Some are merged because they have the same meaning
-    #hm_types = [0, 1, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13]
-    hm_types = [0, 1, 7, 8, 13] # only important ones
+    hm_types = [0, 1, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13]
+    #hm_types = [0, 1, 7, 8, 13] # only important ones
     coltofit.extend(["hm_{}".format(i) for i in hm_types])
 
     #print coltofit
     #a.cv_scores(coltofit)
-    #a.fitNscore(coltofit)
+    #a.fitNscore(coltofit, maxdepth=26, nestimators=200)
     testplicklename = 'saved_clf/test_data.pkl'
     #a.fitNsave(coltofit, 'saved_clf/clf_md20_ne250/clf.pkl', maxdepth=20, nestimator=250)
-    a.submit(coltofit, test_pickle=testplicklename)
-    #a.submit(coltofit, test_pickle=testplicklename, maxdepth=18, nestimator=200)
+    #a.submit(coltofit, test_pickle=testplicklename)
+    a.submit(coltofit, test_pickle=testplicklename, maxdepth=26, nestimator=200)
     #a.submit(coltofit)
     #a.prepareNsave(a.df_full, coltofit,
-    #                save_name='saved_clf/train_data.pkl')
+    #                save_name='saved_clf/train_data_700k.pkl')
     ## prepare and save test
     #a.prepareNsave(pd.read_csv('Data/test_2014.csv'),
     #               coltofit, save_name=testplicklename, ignore_clean=True)
+
+    # Fake submit
+    # training
+    #a = RandomForestClf('Data/train_2013.csv', 700000)
+    #a.fitNsave(coltofit, 'saved_clf/clf_md20_ne250/clf_700k.pkl', maxdepth=20, nestimator=250)
+    # testing on the rest of the sample
+    # fake submit file
+    #a.submit(coltofit, csvname='fake_submit.csv')
