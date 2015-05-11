@@ -2,6 +2,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as N
+from time import time
+from operator import itemgetter
+
 
 ## Ressources
 import multiprocessing
@@ -25,11 +28,10 @@ class clf_learning(RandomForestClf):
         waitNshow = kwargs.get('waitNshow', True)
         njobs = kwargs.get('njobs', 1)
         nestimators = kwargs.get('nestimators', 250)
-        maxdepth = kwargs.get('maxdepth', 25)
+        maxdepth = kwargs.get('maxdepth', None)
         cv = kwargs.get('cv', 3)
         predispatch = '2*n_jobs'
 
-        print('\nusing nestim={} & maxdepth={}'.format(nestimators, maxdepth))
         print('nsizes={}, n_jobs={}, pre_dispatch={}\n'.format(nsizes,
                                                                njobs,
                                                                predispatch))
@@ -43,11 +45,10 @@ class clf_learning(RandomForestClf):
         target_values = self.df_full['rain'].values
 
         print '\n\nlearning with njobs = {}\n...\n'.format(njobs)
+
+        self.set_classifier(**kwargs)
         train_sizes, train_scores, test_scores =\
-            learning_curve(RandomForestClassifier(n_estimators=nestimators,
-                                                  max_depth=maxdepth,
-                                                  verbose=verbose,
-                                                  class_weight='auto'),
+            learning_curve(self.rainClassifier,
                            train_values, target_values, cv=cv, verbose=verbose,
                            n_jobs=njobs, pre_dispatch=predispatch,
                            train_sizes=train_sizes,
@@ -73,11 +74,27 @@ class clf_learning(RandomForestClf):
         plt.plot(train_sizes, test_scores_mean, 'o-', color="g",
              label="Cross-validation score")
         plt.legend(loc="best")
-        print 'Learning curve finished'
+        print('Learning curve finished')
+
+
         if waitNshow:
             fig.show()
             raw_input('press enter when finished...')
         return {'fig_learning': fig, 'train_scores': train_scores, 'test_scores':test_scores}
+
+    def report(self, grid_scores, n_top=3):
+        """Utility function to report best scores."""
+        top_scores = sorted(grid_scores, key=itemgetter(1), reverse=True)[:n_top]
+        for i, score in enumerate(top_scores):
+            print("Model with rank: {0}".format(i + 1))
+            print("Mean validation score: {0:.3f} (std: {1:.3f})".format(
+                score.mean_validation_score,
+                N.std(score.cv_validation_scores)))
+            print("Parameters: {0}".format(score.parameters))
+            print("")
+
+
+
 
     def grid_search(self, col2fit, **kwargs):
         """
@@ -87,8 +104,10 @@ class clf_learning(RandomForestClf):
          showNwaite (bool): show the plots and waits for the user to press enter when finished
          default:True
         """
-        max_depths = [9, 12, 13, 15, 18, 22, 26]
-        nestimators = [30, 50, 70, 80, 100, 150, 200, 250, 300]
+        #max_depths = [9, 12, 13, 15, 18, 22, 26]
+        #nestimators = [30, 50, 70, 80, 100, 150, 200, 250, 300]
+        max_depths = [18, 22, 26, 30, 35, 40]
+        nestimators = [100, 150, 200, 250, 300]
         #max_depths = [8,20,30]
         #nestimators = [50, 200, 300]
         #nestimators = [10, 20, 30]
@@ -98,7 +117,14 @@ class clf_learning(RandomForestClf):
             nestimators = kwargs['nestimators']
 
 
-        parameters = {'max_depth': max_depths, 'n_estimators' : nestimators}
+        #parameters = {'max_depth': max_depths, 'n_estimators' : nestimators}
+        # use a full grid over all parameters
+        parameters = {"max_depth": [9, 26, None],
+                      "max_features": [3, 'auto', None],
+                      "min_samples_split": [1, 2, 8],
+                      "min_samples_leaf": [1, 3, 10],
+                      "bootstrap": [True, False],
+                      "criterion": ["gini", "entropy"]}
 
         if not self.iscleaned:
             print 'Preparing the data...'
@@ -117,19 +143,21 @@ class clf_learning(RandomForestClf):
 
         ## Fit the grid
         print 'fitting the grid with njobs = {}...'.format(njobs)
-        rf_grid = grid_search.RandomizedSearchCV(RandomForestClassifier(class_weight='auto'),
+        start = time()
+        rf_grid = grid_search.RandomizedSearchCV(RandomForestClassifier(class_weight='auto',n_estimators=100),
                                                  parameters,
                                                  n_jobs=njobs, verbose=2,
                                                  scoring=kaggle_score,
                                                  pre_dispatch=pre_dispatch,
                                                  error_score=0,
-                                                 n_iter=17)
+                                                 n_iter=20)
         #rf_grid = grid_search.GridSearchCV(RandomForestClassifier(), parameters,
         #                                   n_jobs=njobs, verbose=2)
         rf_grid.fit(train_values, target_values)
         print('Grid search finished')
 
         ## Get score
+        """
         score_dict = rf_grid.grid_scores_
         nestims = []
         mxdeps = []
@@ -150,6 +178,11 @@ class clf_learning(RandomForestClf):
                     rf_grid.best_params_['max_depth'], c='r',
                     s=score_factor*rf_grid.best_score_)
         fig_nestim.show()
+        """
+
+        print("GridSearchCV took %.2f seconds for %d candidate parameter settings."
+              % (time() - start, len(rf_grid.grid_scores_)))
+        self.report(rf_grid.grid_scores_)
 
         print('\n\nBest score = {}'.format(rf_grid.best_score_))
         print('Best params = {}\n\n'.format(rf_grid.best_params_))
@@ -157,7 +190,7 @@ class clf_learning(RandomForestClf):
         raw_input('\n press enter when finished...')
 
 if __name__=='__main__':
-    #lrn = clf_learning('Data/train_2013.csv', 10000)
+    #lrn = clf_learning('Data/train_2013.csv', 50000)
     lrn = clf_learning(saved_pkl='saved_clf/train_data_700k.pkl')
     #lrn = clf_learning(saved_pkl='saved_clf/train_data.pkl')
     clf_coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
@@ -169,6 +202,6 @@ if __name__=='__main__':
                 'Avg_MassWeightedMean', 'Range_MassWeightedMean',
                 'Avg_MassWeightedSD', 'Range_MassWeightedSD', 'Avg_RhoHV', 'Range_RhoHV'
                 ]
-    #lrn.grid_search(clf_coltofit)
-    lrn.learn_curve(clf_coltofit, njobs=1, verbose=1,
-                    nestimators=200, maxdepth=26)
+    lrn.grid_search(clf_coltofit)
+    #lrn.learn_curve(clf_coltofit, njobs=1, verbose=1,
+    #                nestimators=100, maxdepth=None)

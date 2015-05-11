@@ -77,8 +77,15 @@ class RandomForestClf(BaseModel):
 
     def set_classifier(self, **kwargs):
         """Set the classifier."""
-        nestimators = kwargs.get('nestimators', 225)
-        maxdepth = kwargs.get('maxdepth', 19)
+        verbose = kwargs.get('verbose', 0)
+        nestimators = kwargs.get('nestimators', 250)
+        maxdepth = kwargs.get('maxdepth', None)
+        bootstrap = kwargs.get('bootstrap', False)
+        min_samples_leaf = kwargs.get('min_samples_leaf', 1)
+        min_samples_split = kwargs.get('min_samples_split', 2)
+        criterion = kwargs.get('criterion', 'entropy')
+        max_features = kwargs.get('max_features', 3)
+        random_state = kwargs.get('random_state', 0)
         class_weight = "auto"
 
         print('\nClassifier max_depth={}'.format(maxdepth))
@@ -86,7 +93,17 @@ class RandomForestClf(BaseModel):
         print('class_weight={}'.format(class_weight))
         self.rainClassifier = RandomForestClassifier(n_estimators=nestimators,
                                                      max_depth=maxdepth,
+                                                     bootstrap=bootstrap,
+                                                     min_samples_leaf=min_samples_leaf,
+                                                     min_samples_split=min_samples_split,
+                                                     criterion=criterion,
+                                                     max_features=max_features,
                                                      class_weight=class_weight)
+        print('\n\nClassifier set with parameters:')
+        par_dict = self.rainClassifier.get_params()
+        for ipar in par_dict.keys():
+            print('{}: {}'.format(ipar, par_dict[ipar]))
+        print('\n\n')
 
     def fitModel(self, values2fit, targets, **kwargs):
         """Fit the classifier."""
@@ -298,10 +315,10 @@ class RandomForestClf(BaseModel):
 
 
 if __name__ == "__main__":
-    #a = RandomForestClf('Data/train_2013.csv', 950000)
+    #a = RandomForestClf('Data/train_2013.csv', 1000)
     #a = RandomForestClf('Data/train_2013.csv', 'all')
-    #a = RandomForestClf(saved_pkl='saved_clf/train_data_700k.pkl')
-    a = RandomForestClf(saved_pkl='saved_clf/train_data.pkl')
+    a = RandomForestClf(saved_pkl='saved_clf/train_data_700k.pkl')
+    #a = RandomForestClf(saved_pkl='saved_clf/train_data.pkl')
     #a = RandomForestClf(clf_pkl='saved_clf/clf_md20_ne250/clf.pkl')
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex',
@@ -335,11 +352,11 @@ if __name__ == "__main__":
 
     #print coltofit
     #a.cv_scores(coltofit)
-    #a.fitNscore(coltofit, maxdepth=26, nestimators=200)
+    a.fitNscore(coltofit, maxdepth=None, nestimators=100)
     testplicklename = 'saved_clf/test_data.pkl'
     #a.fitNsave(coltofit, 'saved_clf/clf_md20_ne250/clf.pkl', maxdepth=20, nestimator=250)
     #a.submit(coltofit, test_pickle=testplicklename)
-    a.submit(coltofit, test_pickle=testplicklename, maxdepth=26, nestimator=200)
+    #a.submit(coltofit, test_pickle=testplicklename, maxdepth=26, nestimator=200)
     #a.submit(coltofit)
     #a.prepareNsave(a.df_full, coltofit,
     #                save_name='saved_clf/train_data_700k.pkl')
