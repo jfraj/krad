@@ -12,6 +12,7 @@ from sklearn import metrics
 # this projects
 from basemodel import BaseModel
 from score import kaggle_metric
+import feature_lists
 
 
 class GBoostReg(BaseModel):
@@ -172,21 +173,7 @@ class GBoostReg(BaseModel):
 
 
 if __name__ == "__main__":
-    a = GBoostReg('Data/train_2013.csv', 30000)
-    coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
-                'Avg_DistanceToRadar', 'Avg_RadarQualityIndex',
-                'Range_RadarQualityIndex',
-                'Avg_RR1', 'Range_RR1', 'Avg_RR2', 'Range_RR2',
-                'Avg_RR3', 'Range_RR3', 'Avg_Zdr', 'Range_Zdr',
-                'Avg_Composite', 'Range_Composite', 'Avg_HybridScan',
-                'Range_HybridScan', 'Avg_Velocity', 'Range_Velocity',
-                'Avg_LogWaterVolume', 'Range_LogWaterVolume',
-                'Avg_MassWeightedMean', 'Range_MassWeightedMean',
-                'Avg_MassWeightedSD', 'Range_MassWeightedSD',
-                'Avg_RhoHV', 'Range_RhoHV', 'Avg_Kdp', 'Range_Kdp',
-                ]
-    hm_types = [0, 1, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13]
-    coltofit.extend(["hm_{}".format(i) for i in hm_types])
+    a = GBoostReg('Data/train_2013.csv', 1000)
     #a.prepare_data(a.df_full, True, coltofit)
     #a.set_model()
-    a.fitNscore(coltofit)
+    a.fitNscore(feature_lists.get_list1())
