@@ -6,6 +6,9 @@ from operator import itemgetter
 
 # Sklearn
 from sklearn.learning_curve import learning_curve
+from sklearn.learning_curve import validation_curve
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn import grid_search
 
 from gb_reg import GBoostReg
 from score import kaggle_score
@@ -73,9 +76,116 @@ class reg_learning(GBoostReg):
             raw_input('press enter when finished...')
         return {'fig_learning': fig, 'train_scores': train_scores, 'test_scores':test_scores}
 
+    def valid_curve(self, col2fit, **kwargs):
+        """Plot the learning curve over raining data."""
+        if not self.iscleaned:
+            print 'Preparing the data...'
+            self.prepare_data(self.df_full, True, col2fit)
+        else:
+            print 'data frame is already cleaned...'
+
+        score = kaggle_score
+        train_values = self.df_full[col2fit].values
+        target_values = self.df_full['Expected'].values
+
+        paramater4validation = 'max_depth'
+        param_range = [8,16,20,24,30]
+
+        print '\nValidating on {} with ranges:'.format(paramater4validation)
+        print param_range
+
+        n_jobs = 4
+        print '\n\nwith n_jobs = {}\n...\n'.format(n_jobs)
+
+        cv = 3
+        #cv = 5
+        print 'validating with {} cross validations...'.format(cv)
+        train_scores, test_scores = validation_curve(
+            GradientBoostingRegressor(), train_values, target_values,
+            param_name=paramater4validation, param_range=param_range, cv=cv,
+            scoring=score, verbose=1, n_jobs=n_jobs)
+
+
+        ## plotting
+        train_scores_mean = N.mean(train_scores, axis=1)
+        train_scores_std = N.std(train_scores, axis=1)
+        test_scores_mean = N.mean(test_scores, axis=1)
+        test_scores_std = N.std(test_scores, axis=1)
+        fig = plt.figure()
+        plt.title("Validation Curve")
+        plt.xlabel(paramater4validation)
+        plt.ylabel(score)
+        plt.plot(param_range, train_scores_mean, label="Training score", color="r")
+        plt.fill_between(param_range, train_scores_mean - train_scores_std,
+                 train_scores_mean + train_scores_std, alpha=0.2, color="r")
+        plt.plot(param_range, test_scores_mean, label="Cross-validation score",
+             color="g")
+        plt.fill_between(param_range, test_scores_mean - test_scores_std,
+                 test_scores_mean + test_scores_std, alpha=0.2, color="g")
+        plt.grid()
+        plt.legend(loc='best')
+        fig.show()
+        raw_input('press enter when finished...')
+
+
+    def grid_report(self, grid_scores, n_top=5):
+        """Utility function to report best scores."""
+        top_scores = sorted(grid_scores, key=itemgetter(1), reverse=True)[:n_top]
+        for i, score in enumerate(top_scores):
+            print("Model with rank: {0}".format(i + 1))
+            print("Mean validation score: {0:.3f} (std: {1:.3f})".format(
+                score.mean_validation_score,
+                N.std(score.cv_validation_scores)))
+            print("Parameters: {0}".format(score.parameters))
+            print("")
+
+    def grid_search(self, col2fit, **kwargs):
+        """Using grid search to find the best parameters."""
+        n_jobs = kwargs.get('n_jobs', 1)
+
+        # use a full grid over all parameters
+        parameters = {"max_depth": [3, 6, 24],
+                      "max_features": [1.0, 0.3, 0.1],
+                      "min_samples_leaf": [3, 5, 9, 17],
+                      "learning_rate": [0.01, 0.02, 0.05, 0.1]}
+
+        if not self.iscleaned:
+            print 'Preparing the data...'
+            self.prepare_data(self.df_full, True, col2fit)
+        else:
+            print 'data frame is already cleaned...'
+        train_values = self.df_full[col2fit].values
+        target_values = self.df_full['Expected'].values
+
+        pre_dispatch = '2*n_jobs'
+
+        # Fit the grid
+        print 'fitting the grid with njobs = {}...'.format(n_jobs)
+        start = time()
+        estimator = GradientBoostingRegressor(n_estimators=200)
+        rf_grid = grid_search.RandomizedSearchCV(estimator,
+                                                 parameters,
+                                                 n_jobs=n_jobs, verbose=2,
+                                                 pre_dispatch=pre_dispatch,
+                                                 error_score=0,
+                                                 n_iter=20)
+        rf_grid.fit(train_values, target_values)
+        print('Grid search finished')
+
+        print("\n\nGridSearchCV took %.2f seconds for %d candidate parameter settings."
+              % (time() - start, len(rf_grid.grid_scores_)))
+        self.grid_report(rf_grid.grid_scores_)
+
+        print('\n\nBest score = {}'.format(rf_grid.best_score_))
+        print('Best params = {}\n\n'.format(rf_grid.best_params_))
+
+
 if __name__=='__main__':
-    lrn = reg_learning('Data/train_2013.csv', 100000)
-    #lrn = reg_learning('Data/train_2013.csv', 1000)
+    lrn = reg_learning('Data/train_2013.csv', nrows=None)
+    #lrn = reg_learning('Data/train_2013.csv', 200000)
+    #lrn = reg_learning('Data/train_2013.csv', 10000)
+    #lrn = reg_learning(saved_pkl='saved_clf/train_data_700k.pkl')
+    #lrn = reg_learning(saved_pkl='saved_clf/train_data.pkl')
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
                 'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
@@ -88,4 +198,6 @@ if __name__=='__main__':
     hm_types = [0, 1, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13]
     #hm_types = [0, 1, 7, 8, 13] # only important ones
     coltofit.extend(["hm_{}".format(i) for i in hm_types])
-    lrn.learn_curve(coltofit, n_jobs=2, verbose=1)
+    lrn.learn_curve(coltofit, n_jobs=6, n_estimators=1000)
+    #lrn.grid_search(coltofit, n_jobs=4, verbose=1)
+    #lrn.valid_curve(coltofit)

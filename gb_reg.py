@@ -18,7 +18,7 @@ class GBoostReg(BaseModel):
 
     """Model using Gradient Boosting regressor."""
 
-    def __init__(self, train_data_fname=None, nrows='all', **kwargs):
+    def __init__(self, train_data_fname=None, nrows=None, **kwargs):
         """Initialize the data frame."""
         reg_pkl = kwargs.get('reg_pkl', False)
         if reg_pkl:
@@ -58,18 +58,18 @@ class GBoostReg(BaseModel):
         """Set the model."""
         verbose = kwargs.get('verbose', 0)
         n_estimators = kwargs.get('n_estimators', 100)
-        max_depth = kwargs.get('max_depth', 3)
-        learning_rate = kwargs.get('learning_rate', 0.1)
-        min_samples_leaf = kwargs.get('min_samples_leaf', 1)
-        min_samples_split = kwargs.get('min_samples_split', 2)
-        max_features = kwargs.get('max_features', None)
+        max_depth = kwargs.get('max_depth', 24)
+        learning_rate = kwargs.get('learning_rate', 0.02)
+        min_samples_leaf = kwargs.get('min_samples_leaf', 17)
+        max_features = kwargs.get('max_features', 0.1)
         random_state = kwargs.get('random_state', 42)
 
         self.rainRegressor = GradientBoostingRegressor(n_estimators=n_estimators,
                                                    max_depth=max_depth,
+                                                   learning_rate=learning_rate,
                                                    min_samples_leaf=min_samples_leaf,
-                                                   min_samples_split=min_samples_split,
                                                    max_features=max_features,
+                                                   verbose=verbose,
                                                    random_state=random_state)
         print('\n\nRegressor set with parameters:')
         par_dict = self.rainRegressor.get_params()

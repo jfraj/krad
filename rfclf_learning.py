@@ -93,15 +93,11 @@ class clf_learning(RandomForestClf):
             print("Parameters: {0}".format(score.parameters))
             print("")
 
-
-
-
     def grid_search(self, col2fit, **kwargs):
-        """
-        Using grid search to find the best parameters
+        """Using grid search to find the best parameters.
 
         Kwargs:
-         showNwaite (bool): show the plots and waits for the user to press enter when finished
+         showNwaite (bool): show plots, waits for user to press enter
          default:True
         """
         #max_depths = [9, 12, 13, 15, 18, 22, 26]
@@ -138,8 +134,8 @@ class clf_learning(RandomForestClf):
         ## Making sure there is one free unless there is only one
         #njobs = max(1, int(0.75*multiprocessing.cpu_count()))
         #njobs = max(1, int(multiprocessing.cpu_count() -1))
-        njobs = 1
-        pre_dispatch = 1
+        njobs = 2
+        pre_dispatch = '2*n_jobs'
 
         ## Fit the grid
         print 'fitting the grid with njobs = {}...'.format(njobs)
@@ -150,7 +146,7 @@ class clf_learning(RandomForestClf):
                                                  scoring=kaggle_score,
                                                  pre_dispatch=pre_dispatch,
                                                  error_score=0,
-                                                 n_iter=20)
+                                                 n_iter=15)
         #rf_grid = grid_search.GridSearchCV(RandomForestClassifier(), parameters,
         #                                   n_jobs=njobs, verbose=2)
         rf_grid.fit(train_values, target_values)
@@ -202,6 +198,8 @@ if __name__=='__main__':
                 'Avg_MassWeightedMean', 'Range_MassWeightedMean',
                 'Avg_MassWeightedSD', 'Range_MassWeightedSD', 'Avg_RhoHV', 'Range_RhoHV'
                 ]
-    lrn.grid_search(clf_coltofit)
-    #lrn.learn_curve(clf_coltofit, njobs=1, verbose=1,
-    #                nestimators=100, maxdepth=None)
+    hm_types = [0, 1, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13]
+    clf_coltofit.extend(["hm_{}".format(i) for i in hm_types])
+    #lrn.grid_search(clf_coltofit)
+    lrn.learn_curve(clf_coltofit, njobs=2, verbose=1,
+                    nestimators=100, maxdepth=None)

@@ -27,7 +27,7 @@ class RandomForestReg(BaseModel):
         """Initialize the data frame."""
         reg_pkl = kwargs.get('reg_pkl', False)
         if reg_pkl:
-            print('\nUsing pickled regressor from {}'.format(clf_pkl))
+            print('\nUsing pickled regressor from {}'.format(reg_pkl))
             self.rainRegressor = joblib.load(reg_pkl)
             self.fitted = True
             self.iscleaned = False
@@ -127,18 +127,18 @@ class RandomForestReg(BaseModel):
         print('\nPredicting...')
         predictions = self.rainRegressor.predict(features_test)
 
-        # Get and print the score
-        print('\nScoring...')
-        score = kaggle_metric(N.round(predictions), target_test)
-        score_pois = kaggle_metric(N.round(predictions), target_test, 'poisson')
-        print('\n\nScore(heaviside)={}'.format(score))
-        print('\nScore(poisson)={}\n\n'.format(score_pois))
-
         # Feature index ordered by importance
         ord_idx = N.argsort(self.rainRegressor.feature_importances_)
         print("Feature ranking:")
         for ifeaturindex in ord_idx[::-1]:
             print('{0} \t: {1}'.format(col2fit[ifeaturindex], round(self.rainRegressor.feature_importances_[ifeaturindex], 2)))
+
+        # Get and print the scores
+        print('\nScoring...')
+        score = kaggle_metric(N.round(predictions), target_test)
+        score_pois = kaggle_metric(N.round(predictions), target_test, 'poisson')
+        print('\n\nScore(heaviside)={}'.format(score))
+        print('\nScore(poisson)={}\n\n'.format(score_pois))
 
         # Plots
 
@@ -178,7 +178,8 @@ class RandomForestReg(BaseModel):
 
 
 if __name__ == "__main__":
-    a = RandomForestReg('Data/train_2013.csv', 1000)
+    #a = RandomForestReg('Data/train_2013.csv', 50000)
+    a = RandomForestReg(saved_pkl='saved_clf/train_data_700k.pkl')
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex',
                 'Range_RadarQualityIndex',

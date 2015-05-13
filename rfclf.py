@@ -78,13 +78,13 @@ class RandomForestClf(BaseModel):
     def set_classifier(self, **kwargs):
         """Set the classifier."""
         verbose = kwargs.get('verbose', 0)
-        nestimators = kwargs.get('nestimators', 250)
+        nestimators = kwargs.get('nestimators', 100)
         maxdepth = kwargs.get('maxdepth', None)
-        bootstrap = kwargs.get('bootstrap', False)
+        bootstrap = kwargs.get('bootstrap', True)
         min_samples_leaf = kwargs.get('min_samples_leaf', 1)
         min_samples_split = kwargs.get('min_samples_split', 2)
-        criterion = kwargs.get('criterion', 'entropy')
-        max_features = kwargs.get('max_features', 3)
+        criterion = kwargs.get('criterion', 'gini')
+        max_features = kwargs.get('max_features', None)
         random_state = kwargs.get('random_state', 0)
         class_weight = "auto"
 
