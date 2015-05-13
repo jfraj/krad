@@ -12,6 +12,7 @@ from sklearn import grid_search
 
 from gb_reg import GBoostReg
 from score import kaggle_score
+import feature_lists
 
 
 class reg_learning(GBoostReg):
@@ -48,11 +49,16 @@ class reg_learning(GBoostReg):
                            n_jobs=n_jobs, pre_dispatch=pre_dispatch,
                            train_sizes=train_sizes, scoring=kaggle_score)
 
+        par_dict = self.rainRegressor.get_params()
+
         ## Plotting
         fig = plt.figure()
         plt.xlabel("Training examples")
         plt.ylabel('kaggle score')
-        plt.title("Learning Curves (Gradient Boosting, reg.)")
+        title_str = "Learning Curves, GBoosting reg.)"
+        title_str += ", ne={}".format(par_dict['n_estimators'])
+        title_str += " md={}".format(par_dict['max_depth'])
+        plt.title(title_str)
         train_scores_mean = N.mean(train_scores, axis=1)
         train_scores_std = N.std(train_scores, axis=1)
         test_scores_mean = N.mean(test_scores, axis=1)
@@ -181,23 +187,11 @@ class reg_learning(GBoostReg):
 
 
 if __name__=='__main__':
-    lrn = reg_learning('Data/train_2013.csv', nrows=None)
+    #lrn = reg_learning('Data/train_2013.csv', nrows=None)
     #lrn = reg_learning('Data/train_2013.csv', 200000)
-    #lrn = reg_learning('Data/train_2013.csv', 10000)
+    lrn = reg_learning('Data/train_2013.csv', 1000)
     #lrn = reg_learning(saved_pkl='saved_clf/train_data_700k.pkl')
     #lrn = reg_learning(saved_pkl='saved_clf/train_data.pkl')
-    coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
-                'Avg_DistanceToRadar', 'Avg_RadarQualityIndex', 'Range_RadarQualityIndex',
-                'Avg_RR1', 'Range_RR1','Avg_RR2', 'Range_RR2',
-                'Avg_RR3', 'Range_RR3', 'Avg_Zdr', 'Range_Zdr',
-                'Avg_Composite', 'Range_Composite','Avg_HybridScan', 'Range_HybridScan',
-                'Avg_Velocity', 'Range_Velocity', 'Avg_LogWaterVolume', 'Range_LogWaterVolume',
-                'Avg_MassWeightedMean', 'Range_MassWeightedMean',
-                'Avg_MassWeightedSD', 'Range_MassWeightedSD', 'Avg_RhoHV', 'Range_RhoHV'
-                ]
-    hm_types = [0, 1, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13]
-    #hm_types = [0, 1, 7, 8, 13] # only important ones
-    coltofit.extend(["hm_{}".format(i) for i in hm_types])
-    lrn.learn_curve(coltofit, n_jobs=6, n_estimators=1000)
+    lrn.learn_curve(feature_lists.list1, n_jobs=6, n_estimators=100)
     #lrn.grid_search(coltofit, n_jobs=4, verbose=1)
     #lrn.valid_curve(coltofit)
