@@ -172,7 +172,7 @@ class GBoostReg(BaseModel):
 
 
 if __name__ == "__main__":
-    a = GBoostReg('Data/train_2013.csv', 100000)
+    a = GBoostReg('Data/train_2013.csv', 30000)
     coltofit = ['Avg_Reflectivity', 'Range_Reflectivity', 'Nval',
                 'Avg_DistanceToRadar', 'Avg_RadarQualityIndex',
                 'Range_RadarQualityIndex',
@@ -183,7 +183,7 @@ if __name__ == "__main__":
                 'Avg_LogWaterVolume', 'Range_LogWaterVolume',
                 'Avg_MassWeightedMean', 'Range_MassWeightedMean',
                 'Avg_MassWeightedSD', 'Range_MassWeightedSD',
-                'Avg_RhoHV', 'Range_RhoHV',
+                'Avg_RhoHV', 'Range_RhoHV', 'Avg_Kdp', 'Range_Kdp',
                 ]
     hm_types = [0, 1, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13]
     coltofit.extend(["hm_{}".format(i) for i in hm_types])

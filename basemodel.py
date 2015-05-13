@@ -249,6 +249,20 @@ class BaseModel(object):
             df['Avg_RR3'],  df['Range_RR3'], df['Nval_RR3']=\
               zip(*df['RR31'].apply(clean.getListReductions))
             df.drop('Nval_RR3', axis=1, inplace=True)# Already in Nval
+            # This will be used by Kdp
+            #df.drop('RR31', axis=1, inplace=True)
+
+            ## Set negative RR3 (could not be computed) to 0.0 i.e. no rain
+            ## (elements in the list with error code (<=-99000) will make the average negative)
+            df.loc[df.Avg_RR3 < 1, 'Avg_RR3'] = 0.0
+
+        # Kdp
+        # see https://www.kaggle.com/c/how-much-did-it-rain/forums/t/11500/kdp-0-for-all-datasets
+        if var2prep == 'all' or any("Kdp" in s for s in var2prep):
+            if verbose:
+                print 'Clean Kdp'
+            df['Avg_Kdp'],  df['Range_Kdp'] =\
+                zip(*df['RR31'].apply(clean.getKdpFromRR3))
             df.drop('RR31', axis=1, inplace=True)
 
             ## Set negative RR3 (could not be computed) to 0.0 i.e. no rain

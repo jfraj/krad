@@ -1,5 +1,6 @@
 import numpy as N
 import pandas as pd
+from math import log, exp
 
 import logging
 
@@ -88,6 +89,28 @@ def getListReductions(x):
     """
     xarray = N.array(x)
     return xarray.mean(), xarray.ptp(axis=0), len(xarray)
+
+
+def kdp(rr3):
+    """Returns kdp value from the rr3.
+
+    see
+    https://www.kaggle.com/c/how-much-did-it-rain/forums/t/11500/kdp-0-for-all-datasets
+    """
+    try:
+        return N.sign(rr3) * exp(log(abs(rr3) / 40.6) / 0.866)
+    except ValueError:
+        return 0
+
+def getKdpFromRR3(x):
+    """Returns mean, range and std of kpds
+    Input:
+        x : should be a list or tuple of RR3 values
+        (or something that can be turned into a numpy array)
+    """
+    xarray = N.array(map(kdp, x))
+    return xarray.mean(), xarray.ptp(axis=0)
+
 
 def getStringReductions(x):
     """
