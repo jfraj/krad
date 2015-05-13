@@ -42,20 +42,26 @@ class reg_learning(GBoostReg):
 
         print '\n\nlearning with njobs = {}\n...\n'.format(n_jobs)
 
+        score_dic = {'kaggle':kaggle_score,
+                     'mean_squared_error': 'mean_squared_error',
+                     'r2': 'r2'}
+        score_name = kwargs.get('score', 'kaggle')
+        score = score_dic[score_name]
+
         self.set_model(**kwargs)
         train_sizes, train_scores, test_scores =\
             learning_curve(self.rainRegressor,
                            train_values, target_values, cv=cv, verbose=verbose,
                            n_jobs=n_jobs, pre_dispatch=pre_dispatch,
-                           train_sizes=train_sizes, scoring=kaggle_score)
+                           train_sizes=train_sizes, scoring=score)
 
         par_dict = self.rainRegressor.get_params()
 
         ## Plotting
         fig = plt.figure()
         plt.xlabel("Training examples")
-        plt.ylabel('kaggle score')
-        title_str = "Learning Curves, GBoosting reg.)"
+        plt.ylabel('{} score'.format(score_name))
+        title_str = "Learning Curves, GBoosting reg."
         title_str += ", ne={}".format(par_dict['n_estimators'])
         title_str += " md={}".format(par_dict['max_depth'])
         plt.title(title_str)
@@ -189,9 +195,9 @@ class reg_learning(GBoostReg):
 if __name__=='__main__':
     #lrn = reg_learning('Data/train_2013.csv', nrows=None)
     #lrn = reg_learning('Data/train_2013.csv', 200000)
-    lrn = reg_learning('Data/train_2013.csv', 1000)
+    lrn = reg_learning('Data/train_2013.csv', 400000)
     #lrn = reg_learning(saved_pkl='saved_clf/train_data_700k.pkl')
     #lrn = reg_learning(saved_pkl='saved_clf/train_data.pkl')
-    lrn.learn_curve(feature_lists.list1, n_jobs=6, n_estimators=100)
+    lrn.learn_curve(feature_lists.list1, score='r2', n_jobs=6, n_estimators=100)
     #lrn.grid_search(coltofit, n_jobs=4, verbose=1)
     #lrn.valid_curve(coltofit)
