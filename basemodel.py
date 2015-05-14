@@ -1,5 +1,7 @@
+from __future__ import division
 """Base class for models to be trained."""
 import pandas as pd
+import numpy as N
 # modules from this projects
 import clean
 
@@ -293,3 +295,13 @@ class BaseModel(object):
             df.drop('HyMeType1', axis=1, inplace=True)
 
         self.iscleaned = True
+
+    def add_weight_column(self, df):
+        """Add a column with a weight factor"""
+        print('\nAdding weight column based on 1/frequency...')
+        df['weight'] = df.Expected.apply(N.round)
+        df['weight'] = df.groupby(['weight']).transform('count')
+        df['weight'] = df.weight/len(df)
+        df['weight'] = 1/df['weight']
+        df['weight'] = df['weight']/df['weight'].max()
+        print('weight column added')

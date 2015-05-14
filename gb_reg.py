@@ -52,6 +52,8 @@ class GBoostReg(BaseModel):
         for icol in df.columns:
             if icol not in to_keep:
                 df.drop(icol, axis=1, inplace=True)
+        if 'Expected' in df.columns:
+            self.add_weight_column(df)
 
         self.iscleaned = True
 
@@ -86,10 +88,15 @@ class GBoostReg(BaseModel):
         # Regressor
         self.set_model(**kwargs)
 
+        # Weight if provided
+        sample_weight = kwargs.get('sample_weight', None)
+        if sample_weight is not None:
+            print('...fitting with weight...')
+
         print('Fitting on values with shape:')
         print(values2fit.shape)
         print('\nFitting...')
-        self.rainRegressor.fit(values2fit, targets)
+        self.rainRegressor.fit(values2fit, targets, sample_weight=sample_weight)
         self.fitted = True
         print('Done fitting!')
 
@@ -111,7 +118,9 @@ class GBoostReg(BaseModel):
                              random_state=rnd_seed)
 
         # Fit Regressor
-        self.fitModel(features_train, target_train, **kwargs)
+        sample_weight = self.df_full['weight'].values
+        self.fitModel(features_train, target_train,
+                      sample_weight=None, **kwargs)
 
 
         # Feature index ordered by importance
@@ -173,7 +182,7 @@ class GBoostReg(BaseModel):
 
 
 if __name__ == "__main__":
-    a = GBoostReg('Data/train_2013.csv', 1000)
+    a = GBoostReg('Data/train_2013.csv', 50000)
     #a.prepare_data(a.df_full, True, coltofit)
     #a.set_model()
     a.fitNscore(feature_lists.get_list1())
