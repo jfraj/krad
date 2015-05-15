@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as N
 from time import time
 from operator import itemgetter
+from scipy.stats import randint as sp_randint
 
 # Sklearn
 from sklearn.learning_curve import learning_curve
@@ -156,9 +157,9 @@ class reg_learning(GBoostReg):
         n_jobs = kwargs.get('n_jobs', 1)
 
         # use a full grid over all parameters
-        parameters = {"max_depth": [3, 6, 24],
-                      "max_features": [1.0, 0.3, 0.1],
-                      "min_samples_leaf": [3, 5, 9, 17],
+        parameters = {"max_depth": sp_randint(1,30),
+                      "max_features": [1.0, 0.8, 0.6, 0.4, 0.2, 0.1],
+                      "min_samples_leaf": sp_randint(1,25),
                       "learning_rate": [0.01, 0.02, 0.05, 0.1]}
 
         if not self.iscleaned:
@@ -179,14 +180,15 @@ class reg_learning(GBoostReg):
                                                  parameters,
                                                  n_jobs=n_jobs, verbose=2,
                                                  pre_dispatch=pre_dispatch,
+                                                 scoring=kaggle_score,
                                                  error_score=0,
-                                                 n_iter=20)
+                                                 n_iter=25)
         rf_grid.fit(train_values, target_values)
         print('Grid search finished')
 
         print("\n\nGridSearchCV took %.2f seconds for %d candidate parameter settings."
               % (time() - start, len(rf_grid.grid_scores_)))
-        self.grid_report(rf_grid.grid_scores_)
+        self.grid_report(rf_grid.grid_scores_, 15)
 
         print('\n\nBest score = {}'.format(rf_grid.best_score_))
         print('Best params = {}\n\n'.format(rf_grid.best_params_))
@@ -194,10 +196,10 @@ class reg_learning(GBoostReg):
 
 if __name__=='__main__':
     #lrn = reg_learning('Data/train_2013.csv', nrows=None)
-    #lrn = reg_learning('Data/train_2013.csv', 200000)
     lrn = reg_learning('Data/train_2013.csv', 400000)
+    #lrn = reg_learning('Data/train_2013.csv', 1000)
     #lrn = reg_learning(saved_pkl='saved_clf/train_data_700k.pkl')
     #lrn = reg_learning(saved_pkl='saved_clf/train_data.pkl')
-    lrn.learn_curve(feature_lists.list1, score='r2', n_jobs=6, n_estimators=100)
-    #lrn.grid_search(coltofit, n_jobs=4, verbose=1)
+    #lrn.learn_curve(feature_lists.get_list1(), score='mean_squared_error', n_jobs=6, n_estimators=100)
+    lrn.grid_search(feature_lists.get_list1(), n_jobs=4, verbose=1)
     #lrn.valid_curve(coltofit)

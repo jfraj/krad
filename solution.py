@@ -45,7 +45,12 @@ def generate_submission_file(list_id, submission_data, verbose=True, **kwargs):
         i += 1
         # write the solution row
         solution_row = [id_num]
-        solution_row.extend(row)
+        #print row
+        #print ['{:f}'.format(var) for var in row]
+        solution_row.extend(['{:f}'.format(var) for var in row])
+        #solution_row.extend(row)
+        #print(solution_row)
+        #raw_input('next...')
         writer.writerow(solution_row)
         # Every 1000 rows send an update to the user for progress tracking.
         if i % 1000 == 0  and verbose:

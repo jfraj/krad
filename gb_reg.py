@@ -1,5 +1,6 @@
 """Module for fitting single random forest regressor."""
 # Standard
+import pandas as pd
 import numpy as N
 import matplotlib.pyplot as plt
 
@@ -11,8 +12,9 @@ from sklearn import metrics
 
 # this projects
 from basemodel import BaseModel
-from score import kaggle_metric
+from score import kaggle_metric, poisson_cumul
 import feature_lists
+import solution
 
 
 class GBoostReg(BaseModel):
@@ -55,13 +57,25 @@ class GBoostReg(BaseModel):
 
         self.iscleaned = True
 
+    def prepareNsave(self, df, col2save, **kwargs):
+        """Clean and prepare data and save pickle it."""
+        save_name = kwargs.get('save_name', 'saved_gbreg/default.pkl')
+        print('\nWill prepare and save the following column')
+        print(col2save)
+        print('Preparing the data...')
+        self.prepare_data(df, True, col2save, **kwargs)
+        print('Pickling dataframe...')
+        df.to_pickle(save_name)
+        print('Done saving dataframe in {}'.format(save_name))
+
+
     def set_model(self, **kwargs):
         """Set the model."""
         verbose = kwargs.get('verbose', 0)
         n_estimators = kwargs.get('n_estimators', 100)
-        max_depth = kwargs.get('max_depth', 24)
-        learning_rate = kwargs.get('learning_rate', 0.02)
-        min_samples_leaf = kwargs.get('min_samples_leaf', 17)
+        max_depth = kwargs.get('max_depth', 23)
+        learning_rate = kwargs.get('learning_rate', 0.01)
+        min_samples_leaf = kwargs.get('min_samples_leaf', 13)
         max_features = kwargs.get('max_features', 0.1)
         random_state = kwargs.get('random_state', 42)
 
@@ -171,9 +185,75 @@ class GBoostReg(BaseModel):
 
         raw_input('press enter when finished...')
 
+    def submit(self, col2fit, **kwargs):
+        """Create csv file for submission."""
+        csvname = kwargs.get('csvname', 'submission.csv')
+
+        # Preparing training data
+        if not self.iscleaned and not self.fitted:
+            print('Preparing the data...')
+            self.prepare_data(self.df_full, True, col2fit)
+
+        # Fitting train data
+        if not self.fitted:
+            self.fitModel(self.df_full[col2fit].values,
+                          self.df_full['Expected'].values, **kwargs)
+            print('\ndeleting training data')
+            del(self.df_full)
+            self.df_full = None
+
+        # Predicting test data
+        test_pickle = kwargs.get('test_pickle', None)
+        if test_pickle is not None:
+            print('Using pickled test sample {}'.format(test_pickle))
+            df_test = pd.io.pickle.read_pickle(test_pickle)
+        else:
+            print('\nGetting and cleaning all test data...')
+            df_test = pd.read_csv('Data/test_2014.csv')
+            #df_test = pd.read_csv('Data/test_2014.csv', nrows=10050)
+            self.prepare_data(df_test, True, col2fit, ignore_clean=True)
+
+        # Divide the predictions into chunks of subrows
+        subrows = 10000
+        # Create a list of rows to s
+        all_ranges = range(1, int(len(df_test)/subrows) + 1)
+        all_ranges = [subrows*x for x in all_ranges]
+        all_ranges[-1] = len(df_test)  # Last element extended to the last row
+        last_row = 0
+        open_type = 'w'
+        for irange in all_ranges:
+            ilist_id = df_test[last_row:irange]['Id'].values
+            ival2predict = df_test[last_row:irange][col2fit].values
+            print('\nprediction rows {}-{}'.format(last_row, irange))
+            ipredictions = self.rainRegressor.predict(ival2predict)
+            isub_data = N.array(map(poisson_cumul, N.round(ipredictions)))
+            print('writing isubmission data...')
+            solution.generate_submission_file(ilist_id, isub_data,
+                                              open_type=open_type,
+                                              fname=csvname)
+            open_type = 'a'
+            last_row = irange
+        #list_id = df_test[:sel_rows]['Id'].values
+        #values2predict = df_test[:sel_rows][col2fit].values
+        #print('\npredicting...')
+        #predictions = self.rainClassifier.predict(values2predict[:])
+        print('\ndeleting test data')
+        del(df_test)
+
+        # Creating prediction array
+        #print('\nCreate submission data...')
+        #submission_data = N.array(map(poisson_cumul, N.round(predictions)))
+        #solution.generate_submission_file(list_id, submission_data)
+        print '\n\n\n Done!'
+
 
 if __name__ == "__main__":
-    a = GBoostReg('Data/train_2013.csv', 1000)
+    #a = GBoostReg('Data/train_2013.csv', 10050)
+    a = GBoostReg('Data/train_2013.csv')
+    #a = GBoostReg(saved_pkl='saved_gbreg/test1_700k.pkl')
     #a.prepare_data(a.df_full, True, coltofit)
     #a.set_model()
-    a.fitNscore(feature_lists.get_list1())
+    #a.prepareNsave(a.df_full, feature_lists.get_list1(), save_name='saved_gbreg/test1_666k.pkl')
+    #a.fitNscore(feature_lists.get_list1(), n_estimators=200)
+    #a.submit()
+    a.submit(feature_lists.get_list1(), csvname='test_gb_submit.csv', n_estimators=300)
